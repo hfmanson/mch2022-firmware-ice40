@@ -145,7 +145,8 @@ module top (
 	assign irq_n = irq ? 1'b0 : 1'bz;
 
 	// LEDS
-	wire red, green, blue;
+	reg red, green, blue;
+
 	SB_RGBA_DRV #(
 		.CURRENT_MODE("0b1"),       // half current
 		.RGB0_CURRENT("0b000011"),  // 4 mA
