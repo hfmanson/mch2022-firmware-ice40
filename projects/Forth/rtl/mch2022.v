@@ -24,11 +24,13 @@ module top(input clk_in, // 12 MHz
            input             lcd_fmark,
            input             lcd_mode,
 
-           inout [2:0] rgb // LED outputs. [0]: Blue, [1]: Red, [2]: Green.
+           inout [2:0] rgb, // LED outputs. [0]: Blue, [1]: Red, [2]: Green.
+
+           // IRQ
+           output wire       irq_n
 );
 
-  // ######   Clock   #########################################
-
+/*
   wire clk; // 24 MHz
 
   SB_PLL40_PAD  #(.FEEDBACK_PATH("SIMPLE"),
@@ -55,6 +57,15 @@ module top(input clk_in, // 12 MHz
     if (reset_button) reset_cnt <= reset_cnt + !resetq;
     else        reset_cnt <= 0;
   end
+*/
+  wire clk;
+  wire rst;
+  wire resetq = ~rst;
+	sysmgr sysmgr_I (
+		.clk_in (clk_in),
+		.clk    (clk),
+		.rst    (rst)
+	);
 
   // ######   Bus   ###########################################
 
@@ -64,6 +75,16 @@ module top(input clk_in, // 12 MHz
   wire [15:0] io_din;
 
   reg interrupt = 0;
+
+  wire req_valid;
+  wire req_ready;    // true when request processed
+  wire [7:0] resp_data;  // one byte of memory
+  wire       resp_valid; // asserted when a new byte is available
+
+
+	// LEDS
+	wire red, green, blue;
+  assign red = io_dout[0];
 
   // ######   Processor   #####################################
 
@@ -78,8 +99,13 @@ module top(input clk_in, // 12 MHz
     .io_din(io_din),
     .io_addr(io_addr),
 
-    .interrupt_request(interrupt)
+    .interrupt_request(interrupt),
+    .req_valid(req_valid),
+    .req_ready(req_ready),
+    .resp_data(resp_data),
+    .resp_valid(resp_valid)
   );
+`ifdef REAL
 
   // ######   Ticks   #########################################
 
@@ -201,7 +227,7 @@ module top(input clk_in, // 12 MHz
      .tx_data(io_dout[7:0]),
      .rx_data(uart0_data)
   );
-
+`endif
   // ######   SPI interface   #################################
 
   wire [7:0] usr_miso_data, usr_mosi_data;
@@ -233,8 +259,17 @@ module top(input clk_in, // 12 MHz
   wire [7:0] pw_wdata;
   wire pw_wcmd, pw_wstb, pw_end;
 
-  spi_dev_proto #( .NO_RESP(1)
-  ) _protocol (
+
+  wire       pw_req;
+  wire       pw_gnt;
+
+  wire [7:0] pw_rdata;
+  wire       pw_rstb;
+
+  wire [3:0] pw_irq;
+  wire       irq;
+
+  spi_dev_proto _protocol (
     .clk (clk),
     .rst (~resetq),
 
@@ -254,9 +289,53 @@ module top(input clk_in, // 12 MHz
     .pw_wdata (pw_wdata),
     .pw_wcmd  (pw_wcmd),
     .pw_wstb  (pw_wstb),
-    .pw_end   (pw_end)
+    .pw_end   (pw_end),
+
+    // Response
+    .pw_req   (pw_req),
+    .pw_gnt   (pw_gnt),
+    .pw_rdata (pw_rdata),
+    .pw_rstb  (pw_rstb),
+
+    // IRQ
+    .pw_irq        (pw_irq),
+    .irq           (irq)
   );
 
+  assign pw_irq[3:1] = 3'b000;
+  assign irq_n = irq ? 1'b0 : 1'bz;
+
+  spi_dev_fread #(
+    .INTERFACE("STREAM")
+  ) _fread (
+    .clk (clk),
+    .rst (~resetq),
+
+    // SPI interface
+    .pw_wdata     (pw_wdata),
+    .pw_wcmd      (pw_wcmd),
+    .pw_wstb      (pw_wstb),
+    .pw_end       (pw_end),
+    .pw_req       (pw_req),
+    .pw_gnt       (pw_gnt),
+    .pw_rdata     (pw_rdata),
+    .pw_rstb      (pw_rstb),
+    .pw_irq       (pw_irq[0]),
+
+    // Read request interface
+    .req_file_id  (32'hDABBAD00),
+    .req_offset   (32'h0),
+    .req_len      (10'h3FF), // One less than the actual requested length!
+
+    .req_valid    (req_valid),
+    .req_ready    (req_ready),
+
+    // Stream reply interface
+    .resp_data    (resp_data),
+    .resp_valid   (resp_valid)
+  );
+
+`ifdef REAL
   reg  [7:0] command;
   reg [31:0] incoming_data;
   reg [31:0] buttonstate;
@@ -322,7 +401,7 @@ Bits are mapped to the following keys:
   //
   // See also:
   // https://www.latticesemi.com/-/media/LatticeSemi/Documents/ApplicationNotes/IK/ICE40LEDDriverUsageGuide.ashx?document_id=50668
-
+`endif
   SB_RGBA_DRV #(
       .CURRENT_MODE("0b1"),       // half current
       .RGB0_CURRENT("0b000011"),  // 4 mA
@@ -338,7 +417,7 @@ Bits are mapped to the following keys:
       .RGB2(rgb[2]),
       .RGB0(rgb[0])
   );
-
+`ifdef REAL
   // ######   RING OSCILLATOR   ###############################
 
   wire [1:0] buffers_in, buffers_out;
@@ -592,5 +671,5 @@ Bits are mapped to the following keys:
     if (io_wr & io_addr[11] & (io_addr[7:4] == 14)) sdm_blue  <= io_dout;
 
   end
-
+`endif
 endmodule

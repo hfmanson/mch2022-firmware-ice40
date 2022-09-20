@@ -16,6 +16,7 @@ PROJ_RTL_SRCS := $(addprefix rtl/, \
 	common-verilog/stack2.v \
 	common-verilog/stack3.v \
 	common-verilog/uart-fifo.v \
+	sysmgr.v \
 )
 PROJ_PREREQ = \
       $(BUILD_TMP)/iceimage.hex \

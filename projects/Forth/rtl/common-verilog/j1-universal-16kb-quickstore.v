@@ -11,7 +11,14 @@ module j1(
   output wire [15:0] io_dout,
   input  wire [15:0] io_din,
 
-  input  wire interrupt_request
+  input  wire interrupt_request,
+
+  output wire        req_valid,
+  input  wire        req_ready,
+
+  // "fread" response stream/fifo interface
+  input  wire  [7:0] resp_data,
+  input  wire        resp_valid
 );
 
   parameter MEMWORDS = 8192;       // Maximum of 8k words of 16 bits = 16 kb.
@@ -19,17 +26,42 @@ module j1(
 
   // ######   MEMORY   ########################################
 
-    wire mem_wr;
-    wire [12:0] code_addr;
-    reg  [15:0] insn_from_memory;
+  wire mem_wr;
+  wire [12:0] code_addr;
+  reg  [15:0] insn_from_memory;
 
-    reg [15:0] mem [0:MEMWORDS-1]; initial $readmemh("iceimage.hex", mem);
+  reg [15:0] mem [0:MEMWORDS-1]; initial $readmemh("iceimage.hex", mem);
 
-    always @(posedge clk) begin
-        insn_from_memory  <= mem[code_addr];
-        if (mem_wr) mem[io_addr[13:1]] <= io_dout;
+
+	reg [15:0] counter = 16'h0;
+	reg req_valid_reg = 1'b1;	
+  assign req_valid = req_valid_reg;
+  reg [7:0] low_data;
+  assign io_dout = counter < 16'h400;
+  always @(posedge clk) begin
+    if (io_dout) begin
+      // load ram from ESP
+      if (req_valid_reg) req_valid_reg <= req_valid_reg & ~req_ready;
+      else begin
+        if (resp_valid) begin                
+          // store next byte, low or high
+          //if (counter & 1) mem[counter >> 1] <= { resp_data, low_data }; else low_data <= resp_data;
+          counter <= counter + 1;
+        end
+      end
     end
+    else begin
+      insn_from_memory <= mem[code_addr];
+      if (mem_wr) mem[io_addr[13:1]] <= io_dout;
+    end
+  end
 
+
+/*
+  always @(posedge clk) begin
+    insn_from_memory <= mem[code_addr];
+    if (mem_wr) mem[io_addr[13:1]] <= io_dout;
+  end
   // ######   PROCESSOR   #####################################
 
   reg [4:0] rsp, rspN;          // Return stack pointer
@@ -182,5 +214,6 @@ module j1(
       { pc, dsp, rsp, st0 }  <= { pcN, dspN, rspN, st0N };
     end
   end
+*/
 
 endmodule
