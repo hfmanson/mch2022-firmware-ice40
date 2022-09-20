@@ -1,1 +1,31 @@
-The quick brown fox jumped over the lazy dog. !@#$%^&*()12345678
+Maximum bytes that can be sent through spi_dev_fread: 1024 (10'h03FF)
+spi_dev_fread does not work with 24MHz Forth clock, too fast?
+
+Demo first loads ram with 1024 bytes from provided data file
+Then it sends the loaded ram to the UART
+Then it enters a loop querying buttons
+
+When a button is pressed a uppercase letter is sent or a LED is turned on
+When a button is released a lowercase letter is sent or a LED is turned off
+otherwise a lowercase
+Joystick
+Left: "Ll"
+Right: "Rr"
+Up: "Uu"
+Down: "Dd"
+Fire: "Ff"
+Home: green led
+Menu: red led
+Select: blue led
+Start: "Ss"
+A: "Aa"
+B: "Bb"
+
+Based on work of Sylvain Munaut
+
+Fillers to make the file 1024 bytes
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+123456789012
