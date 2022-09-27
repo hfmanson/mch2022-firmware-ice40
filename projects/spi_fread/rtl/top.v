@@ -38,8 +38,14 @@ module top (
 	wire        btn_rpt_stb;
 
 	// UART sender
-	reg   [7:0] uart_data;
-	reg         uart_valid;
+	reg   [7:0] uart_data_reg;
+	reg         uart_valid_reg;
+	wire  [7:0] uart_data;
+	wire        uart_valid;
+	wire  [7:0] uart_data1;
+	wire        uart_valid1;
+	wire  [7:0] uart_data2;
+	wire        uart_valid2;
 	wire        uart_ack;
 
 	// Clock / Reset
@@ -145,7 +151,8 @@ module top (
 	assign irq_n = irq ? 1'b0 : 1'bz;
 
 	// LEDS
-	reg red, green, blue;
+	reg red1, red2, green1, green2, blue;
+	wire red, green;
 
 	SB_RGBA_DRV #(
 		.CURRENT_MODE("0b1"),       // half current
@@ -165,14 +172,11 @@ module top (
 
 	// read 64 bytes from ESP file with FID 0xDABBAD00
 
-    reg [7:0] mem [0:63]; // 64x8 bit memory
-
-	reg request = 1; // immediately request
-	reg [7:0] counter = 8'h0;
-	wire file_request_ready; // true when request processed
-	wire [7:0] file_data;  // one byte of memory
-	wire       file_data_wstrb; // asserted when a new byte is available
-
+	wire        req_valid;  // immediately request
+	wire        req_ready;  // true when request processed
+	wire  [7:0] resp_data;  // one byte of memory
+	wire        resp_valid; // asserted when a new byte is available
+  wire [31:0] req_offset; // offset of file
 	spi_dev_fread #(
 		.INTERFACE("STREAM")
 	) _fread (
@@ -192,66 +196,66 @@ module top (
 
 		// Read request interface
 		.req_file_id  (32'hDABBAD00),
-		.req_offset   (32'h0),
-		.req_len      (10'd63), // One less than the actual requested length!
+		.req_offset   (req_offset),
+		.req_len      (11'h7FF), // One less than the actual requested length!
 
-		.req_valid    (request),
-		.req_ready    (file_request_ready),
+		.req_valid    (req_valid),
+		.req_ready    (req_ready),
 
 		// Stream reply interface
-		.resp_data    (file_data),
-		.resp_valid   (file_data_wstrb)
+		.resp_data    (resp_data),
+		.resp_valid   (resp_valid)
 	);
 
+	wire ram_ready;
+	ram_test my_ram (
+		.clk (clk),
+		.rst (rst),
+		.pw_end       (pw_end),
+		.req_valid    (req_valid),
+		.req_ready    (req_ready),
+
+		// Stream reply interface
+		.resp_data    (resp_data),
+		.resp_valid   (resp_valid),
+		.uart_ack(uart_ack),
+    .req_offset(req_offset),
+		.red(red2),
+		.ram_ready(ram_ready),
+		.uart_valid(uart_valid2),
+		.uart_data(uart_data2)
+	);
+
+	assign uart_data = ram_ready ? uart_data1 : uart_data2;
+	assign uart_valid = ram_ready ? uart_valid1 : uart_valid2;
+	assign red = ram_ready ? red1 : red2;
+	assign green = ram_ready ? green1 : (req_offset == 32'h1000);
 	always @(posedge clk)
 	begin
-		if (counter < 64) begin
-			red <= 1'b1;
-			// load ram from ESP
-			if (request) request <= request & ~file_request_ready;
-			else begin
-				if (file_data_wstrb) begin                
-					// store next byte
-					mem[counter] <= file_data;
-					counter <= counter + 1;
-				end
-			end
-		end
-		else if (counter < 128) begin
-			red <= 1'b0;
-			if (~uart_valid) begin
-				uart_data <= mem[counter[5:0]];
-				counter <= counter + 1;
-				uart_valid <= 1'b1;
-			end
-			else uart_valid <= ~uart_ack;
-		end
-		else
-		begin
+		if (ram_ready) begin
 			// UART
 			// ----
 			// Send key presses to UART for debug
 			if (btn_rpt_stb) begin
 				casez (btn_rpt_change[10:0])
-					11'bzzzzzzzzzz1: uart_data <= btn_rpt_state[0] ? "D" : "d";
-					11'bzzzzzzzzz1z: uart_data <= btn_rpt_state[1] ? "U" : "u";
-					11'bzzzzzzzz1zz: uart_data <= btn_rpt_state[2] ? "L" : "l";
-					11'bzzzzzzz1zzz: uart_data <= btn_rpt_state[3] ? "R" : "r";
-					11'bzzzzzz1zzzz: uart_data <= btn_rpt_state[4] ? "F" : "f";
-					11'bzzzzz1zzzzz: green <= btn_rpt_state[5] ? 1'b1 : 1'b0;
-					11'bzzzz1zzzzzz: red <= btn_rpt_state[6] ? 1'b1 : 1'b0;
+					11'bzzzzzzzzzz1: uart_data1 <= btn_rpt_state[0] ? "D" : "d";
+					11'bzzzzzzzzz1z: uart_data1 <= btn_rpt_state[1] ? "U" : "u";
+					11'bzzzzzzzz1zz: uart_data1 <= btn_rpt_state[2] ? "L" : "l";
+					11'bzzzzzzz1zzz: uart_data1 <= btn_rpt_state[3] ? "R" : "r";
+					11'bzzzzzz1zzzz: uart_data1 <= btn_rpt_state[4] ? "F" : "f";
+					11'bzzzzz1zzzzz: green1 <= btn_rpt_state[5] ? 1'b1 : 1'b0;
+					11'bzzzz1zzzzzz: red1 <= btn_rpt_state[6] ? 1'b1 : 1'b0;
 					11'bzzz1zzzzzzz: blue <= btn_rpt_state[7] ? 1'b1 : 1'b0;
-					11'bzz1zzzzzzzz: uart_data <= btn_rpt_state[8] ? "S" : "s";
-					11'bz1zzzzzzzzz: uart_data <= btn_rpt_state[9] ? "A" : "a";
-					11'b1zzzzzzzzzz: uart_data <= btn_rpt_state[10] ? "B" : "b";
-					default: uart_data <= 8'hxx;
+					11'bzz1zzzzzzzz: uart_data1 <= btn_rpt_state[8] ? "S" : "s";
+					11'bz1zzzzzzzzz: uart_data1 <= btn_rpt_state[9] ? "A" : "a";
+					11'b1zzzzzzzzzz: uart_data1 <= btn_rpt_state[10] ? "B" : "b";
+					default: uart_data1 <= 8'hxx;
 				endcase
 			end
 			// Valid
-			uart_valid <= (uart_valid & ~uart_ack) | (btn_rpt_stb & (|btn_rpt_change[10:8] | |btn_rpt_change[4:0]));
+			uart_valid1 <= (uart_valid1 & ~uart_ack) | (btn_rpt_stb & (|btn_rpt_change[10:8] | |btn_rpt_change[4:0]));
 		end
 	end
-
 	// Core
 	uart_tx #(
 		.DIV_WIDTH(8)
