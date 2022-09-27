@@ -151,8 +151,8 @@ module top (
 	assign irq_n = irq ? 1'b0 : 1'bz;
 
 	// LEDS
-	reg red1, red2, green, blue;
-	wire red;
+	reg red1, red2, green1, green2, blue;
+	wire red, green;
 
 	SB_RGBA_DRV #(
 		.CURRENT_MODE("0b1"),       // half current
@@ -172,14 +172,11 @@ module top (
 
 	// read 64 bytes from ESP file with FID 0xDABBAD00
 
-		reg [7:0] mem [0:63]; // 64x8 bit memory
-
-	wire request; // immediately request
-	reg [7:0] counter = 8'h0;
-	wire file_request_ready; // true when request processed
-	wire [7:0] file_data;  // one byte of memory
-	wire       file_data_wstrb; // asserted when a new byte is available
-
+	wire        req_valid;  // immediately request
+	wire        req_ready;  // true when request processed
+	wire  [7:0] resp_data;  // one byte of memory
+	wire        resp_valid; // asserted when a new byte is available
+  wire [31:0] req_offset; // offset of file
 	spi_dev_fread #(
 		.INTERFACE("STREAM")
 	) _fread (
@@ -199,27 +196,30 @@ module top (
 
 		// Read request interface
 		.req_file_id  (32'hDABBAD00),
-		.req_offset   (32'h0),
-		.req_len      (10'h3FF), // One less than the actual requested length!
+		.req_offset   (req_offset),
+		.req_len      (11'h7FF), // One less than the actual requested length!
 
-		.req_valid    (request),
-		.req_ready    (file_request_ready),
+		.req_valid    (req_valid),
+		.req_ready    (req_ready),
 
 		// Stream reply interface
-		.resp_data    (file_data),
-		.resp_valid   (file_data_wstrb)
+		.resp_data    (resp_data),
+		.resp_valid   (resp_valid)
 	);
 
 	wire ram_ready;
 	ram_test my_ram (
 		.clk (clk),
-		.req_valid    (request),
-		.req_ready    (file_request_ready),
+		.rst (rst),
+		.pw_end       (pw_end),
+		.req_valid    (req_valid),
+		.req_ready    (req_ready),
 
 		// Stream reply interface
-		.resp_data    (file_data),
-		.resp_valid   (file_data_wstrb),
+		.resp_data    (resp_data),
+		.resp_valid   (resp_valid),
 		.uart_ack(uart_ack),
+    .req_offset(req_offset),
 		.red(red2),
 		.ram_ready(ram_ready),
 		.uart_valid(uart_valid2),
@@ -229,7 +229,7 @@ module top (
 	assign uart_data = ram_ready ? uart_data1 : uart_data2;
 	assign uart_valid = ram_ready ? uart_valid1 : uart_valid2;
 	assign red = ram_ready ? red1 : red2;
-
+	assign green = ram_ready ? green1 : (req_offset == 32'h1000);
 	always @(posedge clk)
 	begin
 		if (ram_ready) begin
@@ -243,7 +243,7 @@ module top (
 					11'bzzzzzzzz1zz: uart_data1 <= btn_rpt_state[2] ? "L" : "l";
 					11'bzzzzzzz1zzz: uart_data1 <= btn_rpt_state[3] ? "R" : "r";
 					11'bzzzzzz1zzzz: uart_data1 <= btn_rpt_state[4] ? "F" : "f";
-					11'bzzzzz1zzzzz: green <= btn_rpt_state[5] ? 1'b1 : 1'b0;
+					11'bzzzzz1zzzzz: green1 <= btn_rpt_state[5] ? 1'b1 : 1'b0;
 					11'bzzzz1zzzzzz: red1 <= btn_rpt_state[6] ? 1'b1 : 1'b0;
 					11'bzzz1zzzzzzz: blue <= btn_rpt_state[7] ? 1'b1 : 1'b0;
 					11'bzz1zzzzzzzz: uart_data1 <= btn_rpt_state[8] ? "S" : "s";

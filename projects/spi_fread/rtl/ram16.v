@@ -20,19 +20,21 @@ module ram_test (
 
 	// read 64 bytes from ESP file with FID 0xDABBAD00
 
-	reg [7:0] mem [0:16'h2FFF]; // 64x8 bit memory
+	reg [15:0] mem [0:16'h17FF]; // 6144x16 bit memory
   reg [31:0] req_offset_reg;
 	reg [15:0] counter;
+  reg [7:0] low_data;
 	reg req_valid_reg;	
 	reg uart_valid_reg;
   reg  [31:0] buffercontent; // Start with an invalid address
   reg first;
+  wire [15:0] uart_addr;
 	assign req_valid = req_valid_reg;
 	assign uart_valid = uart_valid_reg;
   assign req_offset = req_offset_reg;
 	assign ram_ready = counter == 16'h6000 & ~uart_valid_reg;
 	assign red = req_valid; // ram loading
-
+  assign uart_addr = (counter - 16'h3000) >> 1;
 	always @(posedge clk) begin
     if (rst) begin
       req_offset_reg <= 32'd0;
@@ -53,7 +55,7 @@ module ram_test (
       else begin
         if (resp_valid) begin                
           // store next byte
-          mem[counter] <= resp_data;
+          if (counter[0]) mem[counter[15:1]] <= { resp_data, low_data }; else low_data <= resp_data;
           counter <= counter + 1;
           first <= 1'b0;
         end
@@ -62,7 +64,8 @@ module ram_test (
 		end
 		else if (counter < 16'h6000) begin
 			if (~uart_valid_reg) begin
-				uart_data <= mem[counter - 16'h3000];
+				uart_data <= (counter[0] ? mem[uart_addr][15:8] : mem[uart_addr][7:0]);
+				//uart_data <= mem[uart_addr][15:8];
 				counter <= counter + 1;
 				uart_valid_reg <= 1'b1;
 			end
