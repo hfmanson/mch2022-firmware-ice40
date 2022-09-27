@@ -30,7 +30,6 @@ module top(input clk_in, // 12 MHz
            output wire       irq_n
 );
 
-/*
   wire clk; // 24 MHz
 
   SB_PLL40_PAD  #(.FEEDBACK_PATH("SIMPLE"),
@@ -57,15 +56,6 @@ module top(input clk_in, // 12 MHz
     if (reset_button) reset_cnt <= reset_cnt + !resetq;
     else        reset_cnt <= 0;
   end
-*/
-  wire clk;
-  wire rst;
-  wire resetq = ~rst;
-	sysmgr sysmgr_I (
-		.clk_in (clk_in),
-		.clk    (clk),
-		.rst    (rst)
-	);
 
   // ######   Bus   ###########################################
 
@@ -76,15 +66,16 @@ module top(input clk_in, // 12 MHz
 
   reg interrupt = 0;
 
-  wire req_valid;
-  wire req_ready;    // true when request processed
-  wire [7:0] resp_data;  // one byte of memory
-  wire       resp_valid; // asserted when a new byte is available
+  wire [31:0] req_offset; // offset of file
+  wire        req_valid;
+  wire        req_ready;    // true when request processed
+  wire [7:0]  resp_data;  // one byte of memory
+  wire        resp_valid; // asserted when a new byte is available
 
 
-	// LEDS
-	wire red, green, blue;
-  assign red = io_dout[0];
+  // LEDS
+  //wire red, green, blue;
+  //assign red = io_dout[0];
 
   // ######   Processor   #####################################
 
@@ -92,7 +83,7 @@ module top(input clk_in, // 12 MHz
 
     .clk(clk),
     .resetq(resetq),
-
+    .pw_end(pw_end),
     .io_rd(io_rd),
     .io_wr(io_wr),
     .io_dout(io_dout),
@@ -100,12 +91,12 @@ module top(input clk_in, // 12 MHz
     .io_addr(io_addr),
 
     .interrupt_request(interrupt),
+    .req_offset(req_offset),
     .req_valid(req_valid),
     .req_ready(req_ready),
     .resp_data(resp_data),
     .resp_valid(resp_valid)
   );
-`ifdef REAL
 
   // ######   Ticks   #########################################
 
@@ -227,7 +218,6 @@ module top(input clk_in, // 12 MHz
      .tx_data(io_dout[7:0]),
      .rx_data(uart0_data)
   );
-`endif
   // ######   SPI interface   #################################
 
   wire [7:0] usr_miso_data, usr_mosi_data;
@@ -324,8 +314,8 @@ module top(input clk_in, // 12 MHz
 
     // Read request interface
     .req_file_id  (32'hDABBAD00),
-    .req_offset   (32'h0),
-    .req_len      (10'h3FF), // One less than the actual requested length!
+    .req_offset   (req_offset),
+    .req_len      (11'h7FF), // One less than the actual requested length!
 
     .req_valid    (req_valid),
     .req_ready    (req_ready),
@@ -335,7 +325,6 @@ module top(input clk_in, // 12 MHz
     .resp_valid   (resp_valid)
   );
 
-`ifdef REAL
   reg  [7:0] command;
   reg [31:0] incoming_data;
   reg [31:0] buttonstate;
@@ -401,7 +390,6 @@ Bits are mapped to the following keys:
   //
   // See also:
   // https://www.latticesemi.com/-/media/LatticeSemi/Documents/ApplicationNotes/IK/ICE40LEDDriverUsageGuide.ashx?document_id=50668
-`endif
   SB_RGBA_DRV #(
       .CURRENT_MODE("0b1"),       // half current
       .RGB0_CURRENT("0b000011"),  // 4 mA
@@ -417,7 +405,6 @@ Bits are mapped to the following keys:
       .RGB2(rgb[2]),
       .RGB0(rgb[0])
   );
-`ifdef REAL
   // ######   RING OSCILLATOR   ###############################
 
   wire [1:0] buffers_in, buffers_out;
@@ -671,5 +658,4 @@ Bits are mapped to the following keys:
     if (io_wr & io_addr[11] & (io_addr[7:4] == 14)) sdm_blue  <= io_dout;
 
   end
-`endif
 endmodule
