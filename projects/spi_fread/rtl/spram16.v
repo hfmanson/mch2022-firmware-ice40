@@ -18,22 +18,41 @@ module ram_test (
   input  wire [13:0] address,
   output wire [15:0] dataout  
 );
+  wire [15:0] datain;
+  wire [13:0] load_address;
+  wire        wren;
+  wire        chipselect;
 
-	// read 64 bytes from ESP file with FID 0xDABBAD00
-
-	reg  [7:0] mem [0:16'h2FFF]; // 64x8 bit memory
   reg [31:0] req_offset_reg;
+	reg [15:0] counter;
 	reg [15:0] counter;
 	reg        req_valid_reg;	
   reg [31:0] buffercontent; // Start with an invalid address
   reg        first;
-  reg [15:0] dataout_reg;
+	reg  [7:0] resp_data_reg;
 
 	assign req_valid = req_valid_reg;
   assign req_offset = req_offset_reg;
-  assign dataout = dataout_reg;
-	assign ram_ready = counter == 16'h3000;
-	assign red = req_valid; // ram loading
+	assign ram_ready = counter == 16'h2000;
+	assign red = ram_ready; // ram loading
+
+  assign load_address = { 1'b0, counter[12:0]};
+  assign wren = (counter < 16'h2000);
+  assign chipselect = 1'b1;
+  assign datain = { 8'b00000000, resp_data_reg };
+  
+  SB_SPRAM256KA rambank (
+    .DATAIN(datain),
+    .ADDRESS(ram_ready ? address: load_address),
+    .MASKWREN(4'b1111),
+    .WREN(wren),
+    .CHIPSELECT(chipselect),
+    .CLOCK(clk),
+    .STANDBY(1'b0),
+    .SLEEP(1'b0),
+    .POWEROFF(1'b1),
+    .DATAOUT(dataout)
+  );
 
 	always @(posedge clk) begin
     if (rst) begin
@@ -43,7 +62,7 @@ module ram_test (
       buffercontent <= 32'hFFFFFFFF;
       first <= 1'b1;
     end
-		else if (counter < 16'h3000) begin
+		else if (counter < 16'h2000) begin
 			// load ram from ESP
 			if (req_valid_reg) req_valid_reg <= req_valid_reg & ~req_ready;
       else if (buffercontent != req_offset_reg) begin
@@ -52,15 +71,13 @@ module ram_test (
         first <= 1'b1;
       end
       else begin
-        if (resp_valid) begin                
-          // store next byte
-          mem[counter] <= resp_data;
+        if (resp_valid) begin
+          resp_data_reg <= resp_data;
           counter <= counter + 1;
           first <= 1'b0;
         end
         if (pw_end & ~first) req_offset_reg <= req_offset_reg + 32'h800;
       end
 		end
-    else dataout_reg <= mem[address];
 	end
 endmodule

@@ -42,8 +42,8 @@ module top (
 	reg         uart_valid_reg;
 	wire  [7:0] uart_data;
 	wire        uart_valid;
-	wire  [7:0] uart_data1;
-	wire        uart_valid1;
+	reg   [7:0] uart_data1;
+	reg   [7:0] uart_valid1_reg;
 	wire  [7:0] uart_data2;
 	wire        uart_valid2;
 	wire        uart_ack;
@@ -170,7 +170,7 @@ module top (
 		.RGB2(rgb[2])
 	);
 
-	// read 64 bytes from ESP file with FID 0xDABBAD00
+	// read 2048 bytes from ESP file with FID 0xDABBAD00
 
 	wire        req_valid;  // immediately request
 	wire        req_ready;  // true when request processed
@@ -208,6 +208,8 @@ module top (
 	);
 
 	wire ram_ready;
+  wire [13:0] address;
+  wire [15:0] dataout;
 	ram_test my_ram (
 		.clk (clk),
 		.rst (rst),
@@ -218,21 +220,32 @@ module top (
 		// Stream reply interface
 		.resp_data    (resp_data),
 		.resp_valid   (resp_valid),
-		.uart_ack(uart_ack),
     .req_offset(req_offset),
 		.red(red2),
 		.ram_ready(ram_ready),
-		.uart_valid(uart_valid2),
-		.uart_data(uart_data2)
+    .address(address),
+    .dataout(dataout)    
 	);
 
-	assign uart_data = ram_ready ? uart_data1 : uart_data2;
-	assign uart_valid = ram_ready ? uart_valid1 : uart_valid2;
-	assign red = ram_ready ? red1 : red2;
-	assign green = ram_ready ? green1 : (req_offset == 32'h1000);
+  wire uart_ready;
+	uart_test my_uart (
+		.clk (clk),
+		.rst (rst | ~ram_ready),
+		.uart_ack(uart_ack),
+		.uart_ready(uart_ready),
+		.uart_valid(uart_valid2),
+		.uart_data(uart_data2),
+    .address(address),
+    .data(dataout)
+	);
+
+	assign uart_data = uart_ready ? uart_data1 : uart_data2;
+	assign uart_valid = uart_ready ? uart_valid1_reg : uart_valid2;
+	assign red = uart_ready ? red1 : red2;
+	assign green = uart_ready ? green1 : (req_offset == 32'h1000);
 	always @(posedge clk)
 	begin
-		if (ram_ready) begin
+		if (uart_ready) begin
 			// UART
 			// ----
 			// Send key presses to UART for debug
@@ -253,7 +266,7 @@ module top (
 				endcase
 			end
 			// Valid
-			uart_valid1 <= (uart_valid1 & ~uart_ack) | (btn_rpt_stb & (|btn_rpt_change[10:8] | |btn_rpt_change[4:0]));
+			uart_valid1_reg <= (uart_valid1_reg & ~uart_ack) | (btn_rpt_stb & (|btn_rpt_change[10:8] | |btn_rpt_change[4:0]));
 		end
 	end
 	// Core
