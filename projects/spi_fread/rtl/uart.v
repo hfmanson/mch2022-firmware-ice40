@@ -13,14 +13,9 @@ module uart_test (
   input  wire [15:0] data
 
 );
-
-
-  reg [31:0] req_offset_reg;
-	reg [15:0] counter;
 	reg [15:0] counter;
 	reg uart_valid_reg;
   wire [15:0] uart_addr;
-	reg  [7:0] resp_data_reg;
   reg  [7:0] uart_data_reg;
 
 	assign uart_valid = uart_valid_reg;
