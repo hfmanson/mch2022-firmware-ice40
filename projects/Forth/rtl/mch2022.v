@@ -66,23 +66,24 @@ module top(input clk_in, // 12 MHz
 
   reg interrupt = 0;
 
-  wire [31:0] req_offset; // offset of file
-  wire        req_valid;
+  wire [31:0] req_file_id; // file id
+  wire [31:0] ram_req_offset; // offset of file
+  wire        ram_req_valid;
   wire        req_ready;    // true when request processed
   wire [7:0]  resp_data;  // one byte of memory
   wire        resp_valid; // asserted when a new byte is available
 
-
-  // LEDS
-  //wire red, green, blue;
-  //assign red = io_dout[0];
+  wire        spram_ready;
+  wire [13:0] spram_address;
+  wire        spram_req_valid;
+  wire [31:0] spram_req_offset; // offset of file
 
   // ######   Processor   #####################################
 
   j1 #( .MEMWORDS(6144) ) _j1( // 12 kb Memory
 
     .clk(clk),
-    .resetq(resetq),
+    .resetq(spram_ready),
     .pw_end(pw_end),
     .io_rd(io_rd),
     .io_wr(io_wr),
@@ -91,8 +92,8 @@ module top(input clk_in, // 12 MHz
     .io_addr(io_addr),
 
     .interrupt_request(interrupt),
-    .req_offset(req_offset),
-    .req_valid(req_valid),
+    .req_offset(ram_req_offset),
+    .req_valid(ram_req_valid),
     .req_ready(req_ready),
     .resp_data(resp_data),
     .resp_valid(resp_valid)
@@ -141,7 +142,7 @@ module top(input clk_in, // 12 MHz
   wire sram_wr = io_wr & io_addr[11] & (io_addr[7:4] == 1);
 
   wire [15:0] sram_in_bank0, sram_in_bank1, sram_in_bank2, sram_in_bank3;
-
+/*
     SB_SPRAM256KA rambank0 (
         .DATAIN(io_dout),
         .ADDRESS(sram_addr[13:0]),
@@ -154,6 +155,31 @@ module top(input clk_in, // 12 MHz
         .POWEROFF(1'b1),
         .DATAOUT(sram_in_bank0)
 );
+*/
+  spram16 my_spram (
+    .clk          (clk),
+    .rst          (~resetq),
+    .pw_end       (pw_end),
+    .req_valid    (spram_req_valid),
+    .req_ready    (req_ready),
+
+    // Stream reply interface
+    .resp_data    (resp_data),
+    .resp_valid   (resp_valid),
+    .req_offset   (spram_req_offset),
+    .ram_ready    (spram_ready),
+    // SB_SPRAM256KA interface
+    .datain       (io_dout),
+    .address      (sram_addr[13:0]),
+    .maskwren     (4'b1111),
+    .wren         (sram_wr),
+    .chipselect   (1'b1),
+    .standby      (1'b0),
+    .sleep        (~(sram_addr[15:14] == 2'b00)),
+    .poweroff     (1'b1),
+    .dataout      (sram_in_bank0)    
+  );
+
 
     SB_SPRAM256KA rambank1 (
         .DATAIN(io_dout),
@@ -295,6 +321,11 @@ module top(input clk_in, // 12 MHz
   assign pw_irq[3:1] = 3'b000;
   assign irq_n = irq ? 1'b0 : 1'bz;
 
+
+  wire        req_valid = spram_ready ? ram_req_valid : spram_req_valid;
+  wire [31:0] req_file_id = spram_ready ? 32'hDABBAD00 : 32'hDABBAD01;
+  wire [31:0] req_offset = spram_ready ? ram_req_offset : spram_req_offset;
+
   spi_dev_fread #(
     .INTERFACE("STREAM")
   ) _fread (
@@ -313,7 +344,7 @@ module top(input clk_in, // 12 MHz
     .pw_irq       (pw_irq[0]),
 
     // Read request interface
-    .req_file_id  (32'hDABBAD00),
+    .req_file_id  (req_file_id),
     .req_offset   (req_offset),
     .req_len      (11'h7FF), // One less than the actual requested length!
 

@@ -44,62 +44,12 @@ CREATE SCRATCH MAPSIZE ALLOT
     I 0 AT DUP 20 8TYPE 20 +
   LOOP DROP ;
 
-HEX
-
-CREATE MAPS
-4D C, 41 C, 50 C, 20 C, 31 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,
-20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 04 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 20 C, 20 C, 04 C, 06 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 04 C, 20 C, 04 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 06 C, 06 C, 06 C, 20 C, 06 C, 20 C, 06 C, 06 C, 20 C, 06 C, 20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 
-20 C, 06 C, 20 C, 20 C, 20 C, 06 C, 20 C, 06 C, 06 C, 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 20 C, 01 C, 01 C, 06 C, 
-20 C, 06 C, 20 C, 04 C, 20 C, 20 C, 04 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 01 C, 01 C, 06 C, 
-20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 06 C, 06 C, 06 C, 20 C, 06 C, 02 C, 06 C, 06 C, 20 C, 20 C, 01 C, 01 C, 06 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,
-
-4D C, 41 C, 50 C, 20 C, 32 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 06 C, 01 C, 01 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 06 C, 01 C, 01 C, 20 C, 20 C, 06 C, 20 C, 04 C, 20 C, 20 C, 04 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 06 C, 01 C, 01 C, 20 C, 20 C, 06 C, 04 C, 06 C, 06 C, 06 C, 06 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 06 C, 01 C, 01 C, 20 C, 20 C, 20 C, 20 C, 02 C, 20 C, 06 C, 06 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 06 C, 01 C, 01 C, 20 C, 20 C, 06 C, 20 C, 06 C, 20 C, 20 C, 04 C, 20 C, 06 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 06 C, 06 C, 04 C, 20 C, 04 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 06 C, 20 C, 04 C, 20 C, 20 C, 04 C, 20 C, 04 C, 20 C, 04 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,
-;
-
-DECIMAL
-
-: MAP ( level -- a , return a map address)
-  MAPSIZE * MAPS + ;
-
 : MAP>SCRATCH ( level -- , copy map to scratch )
   ( copy all to scratch )
-  MAP SCRATCH MAPSIZE CMOVE
+  MAPSIZE 2/ 0 DO
+    DUP MAPSIZE 2/ * I + SRAM@ SCRATCH I 2* + !
+  LOOP DROP
+
   ( adjust playfield values )
   SCRATCH COLUMNSIZE +
   COLUMNSIZE 20 * 0
@@ -207,7 +157,7 @@ DECIMAL
   0 #STEP ! ( reset steps count )
   0 #PUSH ! ( reset pushes count )
   .FRAME
-  0 MAX 1 MIN DUP LEVEL !
+  0 MAX 29 MIN DUP LEVEL !
   MAP>SCRATCH
   SCRATCH>SCR
   SCAN ;

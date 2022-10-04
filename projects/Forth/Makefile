@@ -21,7 +21,7 @@ PROJ_RTL_SRCS := $(addprefix rtl/, \
 PROJ_PREREQ = \
       $(BUILD_TMP)/iceimage.hex \
       $(NULL)
-PROJ_TOP_SRC := rtl/mch2022.v
+PROJ_TOP_SRC := rtl/mch2022.v rtl/spram16.v
 PROJ_TOP_MOD := top
 
 # Toolchain config
