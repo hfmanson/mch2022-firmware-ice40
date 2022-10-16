@@ -5,7 +5,7 @@ PROJ_DEPS := spi_slave no2ice40 no2misc
 PROJ_RTL_SRCS := $(addprefix rtl/, \
 	sysmgr.v \
 )
-PROJ_TOP_SRC := rtl/top.v rtl/ram.v rtl/uart.v rtl/button.v
+PROJ_TOP_SRC := rtl/top.v rtl/ram.v rtl/ram16.v rtl/spram16.v rtl/uart.v rtl/uart16.v rtl/button.v
 PROJ_TOP_MOD := top
 
 # Toolchain config

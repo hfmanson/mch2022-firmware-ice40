@@ -11,18 +11,19 @@ module spram_test (
   input  wire  [7:0] resp_data,
   input  wire        resp_valid,
   output wire [31:0] req_offset,
-  output wire        red,
   output wire        ram_ready,
 
   // SPRAM
+  input  wire [15:0] datain,  
   input  wire [13:0] address,
+  input  wire  [3:0] maskwren,
+  input  wire        wren,
+  input  wire        chipselect,
+  input  wire        standby,
+  input  wire        sleep,
+  input  wire        poweroff,
   output wire [15:0] dataout  
 );
-  wire [15:0] datain;
-  wire [13:0] load_address;
-  wire        wren;
-  wire        chipselect;
-
   reg [31:0] req_offset_reg;
   reg [15:0] counter;
   reg [15:0] counter;
@@ -30,27 +31,29 @@ module spram_test (
   reg [31:0] buffercontent; // Start with an invalid address
   reg        first;
   reg  [7:0] resp_data_reg;
+  reg [13:0] load_address_reg;
 
   assign req_valid = req_valid_reg;
   assign req_offset = req_offset_reg;
   assign ram_ready = counter == 16'h2000;
-  assign red = ram_ready; // ram loading
 
-  assign load_address = { 1'b0, counter[12:0]};
-  assign wren = (counter < 16'h2000);
-  assign chipselect = 1'b1;
-  assign datain = { 8'b00000000, resp_data_reg };
+  wire [13:0] load_address = { 2'b00, load_address_reg[12:1]};
+  wire [15:0] load_datain = { resp_data_reg, resp_data_reg };
   
+  wire        nibble_mask_hi = load_address_reg[0];
+  wire        nibble_mask_lo = !load_address_reg[0];
+  wire  [3:0] load_maskwren = { nibble_mask_hi, nibble_mask_hi, nibble_mask_lo, nibble_mask_lo };
+
   SB_SPRAM256KA rambank (
-    .DATAIN(datain),
-    .ADDRESS(ram_ready ? address: load_address),
-    .MASKWREN(4'b1111),
-    .WREN(wren),
-    .CHIPSELECT(chipselect),
+    .DATAIN(ram_ready ? datain : load_datain),
+    .ADDRESS(ram_ready ? address : load_address),
+    .MASKWREN(ram_ready ? maskwren : load_maskwren),
+    .WREN(ram_ready ? wren : 1'b1),
+    .CHIPSELECT(ram_ready ? chipselect : 1'b1),
     .CLOCK(clk),
-    .STANDBY(1'b0),
-    .SLEEP(1'b0),
-    .POWEROFF(1'b1),
+    .STANDBY(ram_ready ? standby : 1'b0),
+    .SLEEP(ram_ready ? sleep : 1'b0),
+    .POWEROFF(ram_ready ? poweroff : 1'b1),
     .DATAOUT(dataout)
   );
 
@@ -72,6 +75,7 @@ module spram_test (
       end
       else begin
         if (resp_valid) begin
+          load_address_reg <= counter;
           resp_data_reg <= resp_data;
           counter <= counter + 1;
           first <= 1'b0;

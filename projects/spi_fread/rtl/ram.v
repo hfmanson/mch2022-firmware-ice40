@@ -32,7 +32,7 @@ module ram_test (
   assign req_valid = req_valid_reg;
   assign req_offset = req_offset_reg;
   assign dataout = dataout_reg;
-  assign ram_ready = counter == 16'h3000;
+  assign ram_ready = req_offset_reg == 16'h3000;
   assign red = req_valid; // ram loading
 
   always @(posedge clk) begin
@@ -61,6 +61,10 @@ module ram_test (
         if (pw_end & ~first) req_offset_reg <= req_offset_reg + 32'h800;
       end
     end
-    else dataout_reg <= mem[address];
+    else if (req_offset_reg < 16'h3000) begin
+      if (pw_end & ~first) req_offset_reg <= req_offset_reg + 32'h800;
+    end
+    else
+      dataout_reg <= mem[address];
   end
 endmodule

@@ -1,10 +1,10 @@
 module button_test (
-	input  wire        clk,
+  input  wire        clk,
 
-	input  wire        uart_ack,
-	input  wire        uart_ready,
-	output wire        uart_valid,
-	output wire  [7:0] uart_data,
+  input  wire        uart_ack,
+  input  wire        uart_ready,
+  output wire        uart_valid,
+  output wire  [7:0] uart_data,
 
   input wire  [15:0] btn_rpt_state,
   input wire  [15:0] btn_rpt_change,
@@ -16,7 +16,14 @@ module button_test (
 );
   reg   [7:0] uart_valid_reg;
   assign uart_valid = uart_valid_reg;
-
+  reg   [7:0] uart_data_reg;
+  assign uart_data = uart_data_reg;
+  reg         red_reg;
+  reg         green_reg;
+  reg         blue_reg;
+  assign      red = red_reg;
+  assign      green = green_reg;
+  assign      blue = blue_reg;
   always @(posedge clk)
   begin
     if (uart_ready) begin
@@ -25,18 +32,18 @@ module button_test (
       // Send key presses to UART for debug
       if (btn_rpt_stb) begin
         casez (btn_rpt_change[10:0])
-          11'bzzzzzzzzzz1: uart_data <= btn_rpt_state[0] ? "D" : "d";
-          11'bzzzzzzzzz1z: uart_data <= btn_rpt_state[1] ? "U" : "u";
-          11'bzzzzzzzz1zz: uart_data <= btn_rpt_state[2] ? "L" : "l";
-          11'bzzzzzzz1zzz: uart_data <= btn_rpt_state[3] ? "R" : "r";
-          11'bzzzzzz1zzzz: uart_data <= btn_rpt_state[4] ? "F" : "f";
-          11'bzzzzz1zzzzz: green     <= btn_rpt_state[5] ? 1'b1 : 1'b0;
-          11'bzzzz1zzzzzz: red       <= btn_rpt_state[6] ? 1'b1 : 1'b0;
-          11'bzzz1zzzzzzz: blue      <= btn_rpt_state[7] ? 1'b1 : 1'b0;
-          11'bzz1zzzzzzzz: uart_data <= btn_rpt_state[8] ? "S" : "s";
-          11'bz1zzzzzzzzz: uart_data <= btn_rpt_state[9] ? "A" : "a";
-          11'b1zzzzzzzzzz: uart_data <= btn_rpt_state[10] ? "B" : "b";
-          default: uart_data <= 8'hxx;
+          11'bzzzzzzzzzz1: uart_data_reg <= btn_rpt_state[0] ? "D" : "d";
+          11'bzzzzzzzzz1z: uart_data_reg <= btn_rpt_state[1] ? "U" : "u";
+          11'bzzzzzzzz1zz: uart_data_reg <= btn_rpt_state[2] ? "L" : "l";
+          11'bzzzzzzz1zzz: uart_data_reg <= btn_rpt_state[3] ? "R" : "r";
+          11'bzzzzzz1zzzz: uart_data_reg <= btn_rpt_state[4] ? "F" : "f";
+          11'bzzzzz1zzzzz: green_reg     <= btn_rpt_state[5] ? 1'b1 : 1'b0;
+          11'bzzzz1zzzzzz: red_reg       <= btn_rpt_state[6] ? 1'b1 : 1'b0;
+          11'bzzz1zzzzzzz: blue_reg      <= btn_rpt_state[7] ? 1'b1 : 1'b0;
+          11'bzz1zzzzzzzz: uart_data_reg <= btn_rpt_state[8] ? "S" : "s";
+          11'bz1zzzzzzzzz: uart_data_reg <= btn_rpt_state[9] ? "A" : "a";
+          11'b1zzzzzzzzzz: uart_data_reg <= btn_rpt_state[10] ? "B" : "b";
+          default: uart_data_reg <= 8'hxx;
         endcase
       end
       // Valid

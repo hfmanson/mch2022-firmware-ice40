@@ -1,6 +1,6 @@
 `default_nettype none
 
-module ram_test (
+module ram_test16 (
 	input  wire        clk,
   input  wire        rst,
   input  wire        pw_end,
