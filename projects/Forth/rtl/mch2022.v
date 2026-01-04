@@ -298,22 +298,6 @@ Bits are mapped to the following keys:
 
   // ######   LEDs   ##########################################
 
-  reg [3:0] LEDs; // [6:4]: IN [2:0] Constant Current Drivers
-
-  reg [15:0] sdm_red,   phase_red;   reg sdm_red_out;   always @(posedge clk) {sdm_red_out,   phase_red}   <= phase_red   + sdm_red;
-  reg [15:0] sdm_green, phase_green; reg sdm_green_out; always @(posedge clk) {sdm_green_out, phase_green} <= phase_green + sdm_green;
-  reg [15:0] sdm_blue,  phase_blue;  reg sdm_blue_out;  always @(posedge clk) {sdm_blue_out,  phase_blue}  <= phase_blue  + sdm_blue;
-
-  wire red   = LEDs[0] | sdm_red_out;
-  wire green = LEDs[1] | sdm_green_out;
-  wire blue  = LEDs[2] | sdm_blue_out;
-
-  wire red_in, green_in, blue_in;
-
-  SB_IO #(.PIN_TYPE(6'b1010_01)) rgb1 (.PACKAGE_PIN(rgb[1]),  .D_OUT_0(1'b0),  .D_IN_0(red_in),   .OUTPUT_ENABLE(1'b0) );
-  SB_IO #(.PIN_TYPE(6'b1010_01)) rgb2 (.PACKAGE_PIN(rgb[2]),  .D_OUT_0(1'b0),  .D_IN_0(green_in), .OUTPUT_ENABLE(1'b0) );
-  SB_IO #(.PIN_TYPE(6'b1010_01)) rgb0 (.PACKAGE_PIN(rgb[0]),  .D_OUT_0(1'b0),  .D_IN_0(blue_in),  .OUTPUT_ENABLE(1'b0) );
-
   // Instantiate iCE40 LED driver hard logic.
   //
   // Note that it's possible to drive the LEDs directly,
@@ -323,20 +307,24 @@ Bits are mapped to the following keys:
   // See also:
   // https://www.latticesemi.com/-/media/LatticeSemi/Documents/ApplicationNotes/IK/ICE40LEDDriverUsageGuide.ashx?document_id=50668
 
-  SB_RGBA_DRV #(
+  wire [31:0] wb_rdata;
+  wire        wb_ack;
+
+  ice40_rgb_wb #(
       .CURRENT_MODE("0b1"),       // half current
       .RGB0_CURRENT("0b000011"),  // 4 mA
       .RGB1_CURRENT("0b000011"),  // 4 mA
       .RGB2_CURRENT("0b000011")   // 4 mA
-  ) RGBA_DRIVER (
-      .CURREN(1'b1),
-      .RGBLEDEN(1'b1),
-      .RGB1PWM(red),
-      .RGB2PWM(green),
-      .RGB0PWM(blue),
-      .RGB1(rgb[1]),
-      .RGB2(rgb[2]),
-      .RGB0(rgb[0])
+  ) rgb_I (
+      .pad_rgb    (rgb),
+      .wb_addr    (io_addr[4:0]),
+      .wb_rdata   (wb_rdata),
+      .wb_wdata   (io_dout),
+      .wb_we      (io_wr),
+      .wb_cyc     (io_addr[11] & (io_addr[7:5] == 6)),
+      .wb_ack     (wb_ack[0]),
+      .clk        (clk),
+      .rst        (~resetq)
   );
 
   // ######   RING OSCILLATOR   ###############################
@@ -542,10 +530,6 @@ Bits are mapped to the following keys:
     (io_addr[11] & (io_addr[7:4] ==  8) ?  color_bg1                                : 16'd0) |
     (io_addr[11] & (io_addr[7:4] ==  9) ?  {updating,fmark_sync2,lcd_mode,lcd_ctrl} : 16'd0) |
     //                              10  ?  lcd_data, writeonly
-    (io_addr[11] & (io_addr[7:4] == 11) ?  {blue_in, green_in, red_in, LEDs}        : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] == 12) ?  sdm_red                                  : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] == 13) ?  sdm_green                                : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] == 14) ?  sdm_blue                                 : 16'd0) |
     (io_addr[11] & (io_addr[7:4] == 15) ?  buttonstate[26:16]                       : 16'd0) |
 
     (io_addr[12] ?                       uart0_data                                 : 16'd0) |
@@ -581,15 +565,6 @@ Bits are mapped to the following keys:
 
     if (io_wr & io_addr[11] & (io_addr[7:4] ==  9)) lcd_ctrl <= io_dout;
     //                                         10   lcd_data write needs special logic, elsewhere
-
-    if (io_wr & io_addr[11] & (io_addr[7:4] == 11) & (io_addr[1:0] == 0))  LEDs      <=               io_dout;
-    if (io_wr & io_addr[11] & (io_addr[7:4] == 11) & (io_addr[1:0] == 1))  LEDs      <=  LEDs      & ~io_dout; // Clear
-    if (io_wr & io_addr[11] & (io_addr[7:4] == 11) & (io_addr[1:0] == 2))  LEDs      <=  LEDs      |  io_dout; // Set
-    if (io_wr & io_addr[11] & (io_addr[7:4] == 11) & (io_addr[1:0] == 3))  LEDs      <=  LEDs      ^  io_dout; // Invert
-
-    if (io_wr & io_addr[11] & (io_addr[7:4] == 12)) sdm_red   <= io_dout;
-    if (io_wr & io_addr[11] & (io_addr[7:4] == 13)) sdm_green <= io_dout;
-    if (io_wr & io_addr[11] & (io_addr[7:4] == 14)) sdm_blue  <= io_dout;
 
   end
 

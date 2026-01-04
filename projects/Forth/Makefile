@@ -1,7 +1,7 @@
 # Project config
 PROJ := forth
 
-PROJ_DEPS := spi_slave
+PROJ_DEPS := spi_slave no2ice40
 PROJ_RTL_SRCS := $(addprefix rtl/, \
 	common-verilog/celement.v \
 	common-verilog/cordic.v \
