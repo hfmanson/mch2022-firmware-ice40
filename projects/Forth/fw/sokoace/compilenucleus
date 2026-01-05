@@ -18,4 +18,5 @@ fpc -XX ../common-crosscompiler/icecreammachine-16kb.pas
 
 md5sum build/nucleus.hex build/iceimage.hex
 
-cp build/iceimage.hex ../../rtl
+# convert hex to bin forth image
+../../hex-to-bin-le.sh build/iceimage.hex ../../build-tmp/soko-image.bin

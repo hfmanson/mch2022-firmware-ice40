@@ -950,8 +950,15 @@ COLUMNSIZE 21 * CONSTANT MAPSIZE
 
 CREATE SCRATCH MAPSIZE ALLOT
 
+: PUTCHAR
+    DUP SOKO =
+    OVER SOKO 1+ = OR
+    OVER BOX 1+ = OR
+    IF HIGHLIGHT ELSE NORMAL THEN
+    LCD-EMIT ;
+
 : 8TYPE
-0 DO DUP I + C@ LCD-EMIT LOOP DROP ;
+0 DO DUP I + C@ PUTCHAR LOOP DROP ;
 
 : SCRATCH>SCR ( -- , copy level map to screen)
   SCRATCH 22 1
@@ -1040,7 +1047,7 @@ DECIMAL
   SCRATCH - ( calculate offset )
   COLUMNSIZE /MOD ( get row and column)
   1+ ( add 1 to row )
-  SWAP AT LCD-EMIT ( put character on screen ) 
+  SWAP AT PUTCHAR ( put character on screen )
 ;
 
 : STEP ( a1 -- , move SOKO one step)
