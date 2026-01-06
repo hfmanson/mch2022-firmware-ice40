@@ -964,310 +964,586 @@ Mecrisp-Ice 2.6
   ok.
 ( SOKOBAN )  ok.
   ok.
+  ok.
+  ok.
 : DEF-CHAR 8 * DUP 8 + SWAP DO I FONT! LOOP ;  ok.
+  ok.
    ok.
+  ok.
 HEX  ok.
+  ok.
 ( Screen elements)  ok.
+  ok.
 00 CONSTANT EMPTY  ok.
+  ok.
 01 CONSTANT TARGET  ok.
+  ok.
 02 CONSTANT SOKO  ok.
+  ok.
 04 CONSTANT BOX  ok.
+  ok.
 06 CONSTANT WALL  ok.
   ok.
+  ok.
+  ok.
 ( GRAPHIC CHARACTERS )  ok.
+  ok.
 : SETGR  ok.
+  ok.
 00 00 00 00 00 00 00 00 EMPTY   DEF-CHAR ( Empty         )  ok.
+  ok.
 00 00 00 18 18 00 00 00 TARGET  DEF-CHAR ( Target        )  ok.
+  ok.
 3C 42 81 FF 99 99 7E 3C SOKO    DEF-CHAR ( Soko          )  ok.
+  ok.
 3C 42 BD FF BD 99 7E 3C SOKO 1+ DEF-CHAR ( Soko + Target )  ok.
+  ok.
 00 7E 42 42 42 42 7E 00 BOX     DEF-CHAR ( Box           )  ok.
+  ok.
 00 7E 42 5A 5A 42 7E 00 BOX 1+  DEF-CHAR ( Box + Target  )  ok.
+  ok.
 FF AB D5 AB D5 AB D5 FF WALL    DEF-CHAR ( Wall          )  ok.
+  ok.
 ;  ok.
   ok.
+  ok.
+  ok.
 DECIMAL  ok.
+  ok.
+  ok.
   ok.
 : AT XPOS ! YPOS ! ; ( row\col ... )  ok.
   ok.
+  ok.
+  ok.
 20 CONSTANT COLUMNSIZE  ok.
+  ok.
 COLUMNSIZE NEGATE CONSTANT UP  ok.
+  ok.
 COLUMNSIZE        CONSTANT DOWN  ok.
+  ok.
 -1                CONSTANT LEFT  ok.
+  ok.
  1                CONSTANT RIGHT  ok.
+  ok.
+  ok.
   ok.
 COLUMNSIZE 21 * CONSTANT MAPSIZE   ok.
   ok.
+  ok.
+  ok.
 CREATE SCRATCH MAPSIZE ALLOT  ok.
   ok.
+  ok.
+  ok.
+: PUTCHAR  ok.
+  ok.
+    DUP SOKO =  ok.
+  ok.
+    OVER SOKO 1+ = OR  ok.
+  ok.
+    OVER BOX 1+ = OR  ok.
+  ok.
+    IF HIGHLIGHT ELSE NORMAL THEN  ok.
+  ok.
+    LCD-EMIT ;  ok.
+  ok.
+  ok.
+  ok.
 : 8TYPE  ok.
-0 DO DUP I + C@ LCD-EMIT LOOP DROP ;  ok.
+  ok.
+0 DO DUP I + C@ PUTCHAR LOOP DROP ;  ok.
+  ok.
+  ok.
   ok.
 : SCRATCH>SCR ( -- , copy level map to screen)  ok.
+  ok.
   SCRATCH 22 1  ok.
+  ok.
   DO  ok.
+  ok.
     I 0 AT DUP 20 8TYPE 20 +  ok.
+  ok.
   LOOP DROP ;  ok.
+  ok.
+  ok.
   ok.
 HEX  ok.
   ok.
+  ok.
+  ok.
 CREATE MAPS  ok.
+  ok.
 4D C, 41 C, 50 C, 20 C, 31 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,  ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 04 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 20 C, 20 C, 04 C, 06 C, 06 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 04 C, 20 C, 04 C, 20 C, 06 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 06 C, 06 C, 06 C, 20 C, 06 C, 20 C, 06 C, 06 C, 20 C, 06 C, 20 C, 20 C, 20
  C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C,   ok.
+  ok.
 20 C, 06 C, 20 C, 20 C, 20 C, 06 C, 20 C, 06 C, 06 C, 20 C, 06 C, 06 C, 06 C, 06
  C, 06 C, 20 C, 20 C, 01 C, 01 C, 06 C,   ok.
+  ok.
 20 C, 06 C, 20 C, 04 C, 20 C, 20 C, 04 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 01 C, 01 C, 06 C,   ok.
+  ok.
 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 06 C, 06 C, 06 C, 20 C, 06 C, 02 C, 06
  C, 06 C, 20 C, 20 C, 01 C, 01 C, 06 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 06 C, 06
  C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,  ok.
+  ok.
+  ok.
   ok.
 4D C, 41 C, 50 C, 20 C, 32 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 06 C, 01 C, 01 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 06
  C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 06 C, 01 C, 01 C, 20 C, 20 C, 06 C, 20 C, 04 C, 20 C, 20 C, 04 C, 20 C, 20
  C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 06 C, 01 C, 01 C, 20 C, 20 C, 06 C, 04 C, 06 C, 06 C, 06 C, 06 C, 20 C, 20
  C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 06 C, 01 C, 01 C, 20 C, 20 C, 20 C, 20 C, 02 C, 20 C, 06 C, 06 C, 20 C, 20
  C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 06 C, 01 C, 01 C, 20 C, 20 C, 06 C, 20 C, 06 C, 20 C, 20 C, 04 C, 20 C, 06
  C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 06 C, 06 C, 04 C, 20 C, 04 C, 20
  C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 06 C, 20 C, 04 C, 20 C, 20 C, 04 C, 20 C, 04 C, 20 C, 04 C, 20
  C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06
  C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,   ok.
+  ok.
 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20
  C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,  ok.
+  ok.
 ;  ok.
+  ok.
+  ok.
   ok.
 DECIMAL  ok.
   ok.
+  ok.
+  ok.
 : MAP ( level -- a , return a map address)  ok.
+  ok.
   MAPSIZE * MAPS + ;  ok.
   ok.
+  ok.
+  ok.
 : MAP>SCRATCH ( level -- , copy map to scratch )  ok.
+  ok.
   ( copy all to scratch )  ok.
+  ok.
   MAP SCRATCH MAPSIZE CMOVE  ok.
+  ok.
   ( adjust playfield values )  ok.
+  ok.
   SCRATCH COLUMNSIZE +  ok.
+  ok.
   COLUMNSIZE 20 * 0  ok.
+  ok.
   DO      ok.
+  ok.
     DUP DUP C@ DUP  ok.
+  ok.
     BL = IF DROP EMPTY SWAP C! ELSE  ok.
+  ok.
     EMPTY OR SWAP C! THEN  ok.
+  ok.
     1+  ok.
+  ok.
   LOOP DROP ;  ok.
   ok.
+  ok.
+  ok.
 : >UPPER ( c1 -- c2 ,convert to uppercase)  ok.
+  ok.
   DUP 96 > IF 223 AND THEN ;  ok.
+  ok.
 : INC ( a -- )   1 SWAP +! ;  ok.
+  ok.
 : DEC ( a -- )  -1 SWAP +! ;  ok.
   ok.
+  ok.
+  ok.
 0 VARIABLE SOKO>   ( holds SOKO screen address )  ok.
+  ok.
 0 VARIABLE #BOX    ( number of boxes out of target )  ok.
+  ok.
 0 VARIABLE #STEP   ( number of steps )  ok.
+  ok.
 0 VARIABLE #PUSH   ( number of pushes )  ok.
   ok.
+  ok.
+  ok.
 : SCRATCH! ( b\addr -- )  ok.
+  ok.
   OVER OVER C!  ok.
+  ok.
   SCRATCH - ( calculate offset )  ok.
+  ok.
   COLUMNSIZE /MOD ( get row and column)  ok.
+  ok.
   1+ ( add 1 to row )  ok.
-  SWAP AT LCD-EMIT ( put character on screen )   ok.
+  ok.
+  SWAP AT PUTCHAR ( put character on screen )  ok.
+  ok.
 ;  ok.
   ok.
+  ok.
+  ok.
 : STEP ( a1 -- , move SOKO one step)  ok.
+  ok.
   DUP C@ TARGET AND SOKO OR OVER SCRATCH! ( place SOKO in new position )  ok.
+  ok.
   SOKO> @                                 ( previous SOKO position )  ok.
+  ok.
   DUP C@ TARGET AND 15 AND                ( check previous contents )  ok.
+  ok.
   IF TARGET ELSE EMPTY THEN               ( Target or Blank )  ok.
+  ok.
   SWAP SCRATCH!                           ( remove SOKO from old position )  ok.
 
+  ok.
   SOKO> !  ok.
+  ok.
   #STEP INC ;  ok.
   ok.
+  ok.
+  ok.
 : PUSH ( a1 a2 -- , push a BOX)  ok.
+  ok.
   OVER C@ TARGET AND 15 AND IF #BOX INC THEN     ( Box entered a target region )
+  ok.
   ok.
   DUP  C@ DUP TARGET AND 15 AND IF #BOX DEC THEN ( Box exited a target area )  o
 k.
+  ok.
   TARGET AND BOX OR SWAP SCRATCH!                ( Move Box )  ok.
+  ok.
   STEP                                           ( Move Soko )  ok.
+  ok.
   #STEP DEC                                      ( Inc Pushes but not Steps )  o
 k.
+  ok.
   #PUSH INC ;  ok.
   ok.
+  ok.
+  ok.
 : GO ( dir -- , try to move Soko in the specified direction)  ok.
+  ok.
  SOKO> @ OVER +         ( next position )  ok.
+  ok.
  DUP C@ WALL =  ok.
+  ok.
  IF DROP DROP           ( if WALL, do nothing )  ok.
+  ok.
  ELSE  ok.
+  ok.
    DUP C@ DUP EMPTY = SWAP TARGET = OR   ok.
+  ok.
    IF STEP DROP         ( if Blank or Target, do Step)  ok.
+  ok.
    ELSE  ok.
+  ok.
      SWAP OVER +        ( over next position )  ok.
+  ok.
      DUP C@ DUP EMPTY = SWAP TARGET = OR   ok.
+  ok.
      IF   PUSH          ( if Blank or Target, do Push )  ok.
+  ok.
      ELSE DROP DROP     ( else, do nothing )  ok.
+  ok.
      THEN  ok.
+  ok.
    THEN  ok.
+  ok.
  THEN ;  ok.
   ok.
+  ok.
+  ok.
 : WALK ( c -- c, interpret key and move Soko )  ok.
+  ok.
   DUP [CHAR] I = IF UP    GO ELSE  ok.
+  ok.
   DUP [CHAR] K = IF DOWN  GO ELSE  ok.
+  ok.
   DUP [CHAR] J = IF LEFT  GO ELSE  ok.
+  ok.
   DUP [CHAR] L = IF RIGHT GO  ok.
+  ok.
   THEN THEN THEN THEN ;  ok.
   ok.
+  ok.
+  ok.
 : .#### ( a -- , formatted score type)  ok.
+  ok.
   @ 0 <# # # # # #> TYPE ;  ok.
   ok.
+  ok.
+  ok.
 : .SCORE ( update score )  ok.
+  ok.
   3 28 AT #BOX  @ .   ok.
+  ok.
   5 28 AT #STEP .####  ok.
+  ok.
   7 28 AT #PUSH .#### ;  ok.
   ok.
+  ok.
+  ok.
 : .FRAME ( Draw screen )  ok.
+  ok.
   PAGE ." ______SokoACE_______ version 1.0"  ok.
+  ok.
    3 22 AT ." BOXES ?"  ok.
+  ok.
    5 22 AT ." STEPS"  ok.
+  ok.
    7 21 AT ." PUSHES"  ok.
+  ok.
   10 21 AT ." I Up"  ok.
+  ok.
   11 21 AT ." K Down"  ok.
+  ok.
   12 21 AT ." J Left"  ok.
+  ok.
   13 21 AT ." L Right"  ok.
+  ok.
   15 21 AT ." N Level + 1"  ok.
+  ok.
   16 21 AT ." P Level - 1"  ok.
+  ok.
   17 21 AT ." R Restart"  ok.
+  ok.
   20 21 AT ." Q Quit"  ok.
+  ok.
   22  0 AT ." _by Ricardo F Lopes_   c 2006" ;  ok.
   ok.
+  ok.
+  ok.
 : SCAN ( Scan screen map for Soko position and count boxes out of target )  ok.
+  ok.
   0 #BOX ! ( reset number of boxes)  ok.
+  ok.
   MAPSIZE SCRATCH + COLUMNSIZE SCRATCH +  ok.
+  ok.
   DO  ok.
+  ok.
     I C@  ok.
+  ok.
     DUP SOKO = IF I SOKO> ! ELSE ( Search for SOKO start position )  ok.
+  ok.
     DUP BOX  = IF #BOX INC       ( Count Boxes out of target )  ok.
+  ok.
     THEN THEN DROP  ok.
+  ok.
   LOOP ;  ok.
+  ok.
+  ok.
   ok.
 0 VARIABLE LEVEL  ok.
   ok.
+  ok.
+  ok.
 : INITLEVEL ( level -- , Initialize Level)  ok.
+  ok.
   0 #STEP ! ( reset steps count )  ok.
+  ok.
   0 #PUSH ! ( reset pushes count )  ok.
+  ok.
   .FRAME  ok.
+  ok.
   0 MAX 1 MIN DUP LEVEL !  ok.
+  ok.
   MAP>SCRATCH  ok.
+  ok.
   SCRATCH>SCR  ok.
+  ok.
   SCAN ;  ok.
   ok.
+  ok.
+  ok.
 : MAP? ( c -- c , Change level)  ok.
+  ok.
   DUP [CHAR] N = IF LEVEL @ 1+ INITLEVEL ELSE ( Next level)  ok.
+  ok.
   DUP [CHAR] P = IF LEVEL @ 1- INITLEVEL ELSE ( Previous level)  ok.
+  ok.
   DUP [CHAR] R = IF LEVEL @    INITLEVEL      ( Re-start same level)  ok.
+  ok.
   THEN THEN THEN ;  ok.
+  ok.
+  ok.
   ok.
 : BUTTONS $08F0 IO@ ; \ Read button state  ok.
   ok.
+  ok.
+  ok.
 : BUTTON-TO-KEY   ok.
+  ok.
   BUTTONS   ok.
+  ok.
   DUP 2 = IF [CHAR] I ELSE  ok.
+  ok.
   DUP 1 = IF [CHAR] K ELSE  ok.
+  ok.
   DUP 4 = IF [CHAR] J ELSE  ok.
+  ok.
   DUP 8 = IF [CHAR] L ELSE  ok.
+  ok.
   DUP $100 = IF [CHAR] R ELSE  ok.
+  ok.
   DUP $200 = IF [CHAR] N ELSE  ok.
+  ok.
   DUP $400 = IF [CHAR] P ELSE 0  ok.
+  ok.
   THEN THEN THEN THEN THEN THEN THEN SWAP ;  ok.
   ok.
+  ok.
+  ok.
 : GET-KEY  ok.
+  ok.
   BEGIN  ok.
+  ok.
     BUTTON-TO-KEY DUP IF  ok.
+  ok.
       BEGIN BUTTONS 0= UNTIL ELSE  ok.
+  ok.
       DROP DROP KEY? IF KEY >UPPER ELSE 0 THEN ?DUP  ok.
+  ok.
     THEN  ok.
+  ok.
   UNTIL  ok.
+  ok.
 ;  ok.
   ok.
+  ok.
+  ok.
 : PLAY ( Main code, run this to play SokoACE)  ok.
+  ok.
   DINT LCD-INIT NOCAPTION  ok.
+  ok.
   +LCD  ok.
+  ok.
   SETGR     ( initialize graphics )  ok.
+  ok.
   0 INITLEVEL    ( start the first level )  ok.
+  ok.
   BEGIN  ok.
+  ok.
     .SCORE       ( Update Score)  ok.
+  ok.
     GET-KEY      ( Get key pressed )  ok.
+  ok.
     WALK         ( Move SOKO )  ok.
+  ok.
     MAP?         ( Check for level request)  ok.
+  ok.
     1 9 AT  ok.
+  ok.
     #BOX @ 0=    ( No boxes left?)  ok.
+  ok.
     IF  ok.
+  ok.
       ." Done !" ( 100 50 BEEP 75 25 BEEP Level completed !)  ok.
+  ok.
     THEN   ok.
+  ok.
     [CHAR] Q = UNTIL  ok.
+  ok.
   ." Quit." ;  ok.
   ok.
+  ok.
+  ok.
 ' PLAY INIT !  ok.
+  ok.
+  ok.
   ok.
 
