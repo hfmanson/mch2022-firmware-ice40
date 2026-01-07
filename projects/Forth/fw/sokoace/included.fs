@@ -916,7 +916,7 @@ cornerstone new
 ( SOKOBAN )
 
 : DEF-CHAR 8 * DUP 8 + SWAP DO I FONT! LOOP ;
- 
+
 HEX
 ( Screen elements)
 00 CONSTANT EMPTY
@@ -946,7 +946,7 @@ COLUMNSIZE        CONSTANT DOWN
 -1                CONSTANT LEFT
  1                CONSTANT RIGHT
 
-COLUMNSIZE 21 * CONSTANT MAPSIZE 
+COLUMNSIZE 21 * CONSTANT MAPSIZE
 
 CREATE SCRATCH MAPSIZE ALLOT
 
@@ -966,66 +966,16 @@ CREATE SCRATCH MAPSIZE ALLOT
     I 0 AT DUP 20 8TYPE 20 +
   LOOP DROP ;
 
-HEX
-
-CREATE MAPS
-4D C, 41 C, 50 C, 20 C, 31 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,
-20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 04 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 20 C, 20 C, 04 C, 06 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 04 C, 20 C, 04 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 06 C, 06 C, 06 C, 20 C, 06 C, 20 C, 06 C, 06 C, 20 C, 06 C, 20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 
-20 C, 06 C, 20 C, 20 C, 20 C, 06 C, 20 C, 06 C, 06 C, 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 20 C, 01 C, 01 C, 06 C, 
-20 C, 06 C, 20 C, 04 C, 20 C, 20 C, 04 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 01 C, 01 C, 06 C, 
-20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 06 C, 06 C, 06 C, 20 C, 06 C, 02 C, 06 C, 06 C, 20 C, 20 C, 01 C, 01 C, 06 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,
-
-4D C, 41 C, 50 C, 20 C, 32 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 06 C, 01 C, 01 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 06 C, 01 C, 01 C, 20 C, 20 C, 06 C, 20 C, 04 C, 20 C, 20 C, 04 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 06 C, 01 C, 01 C, 20 C, 20 C, 06 C, 04 C, 06 C, 06 C, 06 C, 06 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 06 C, 01 C, 01 C, 20 C, 20 C, 20 C, 20 C, 02 C, 20 C, 06 C, 06 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 06 C, 01 C, 01 C, 20 C, 20 C, 06 C, 20 C, 06 C, 20 C, 20 C, 04 C, 20 C, 06 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 06 C, 06 C, 04 C, 20 C, 04 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 06 C, 20 C, 04 C, 20 C, 20 C, 04 C, 20 C, 04 C, 20 C, 04 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 06 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 
-20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C, 20 C,
-;
-
-DECIMAL
-
-: MAP ( level -- a , return a map address)
-  MAPSIZE * MAPS + ;
-
 : MAP>SCRATCH ( level -- , copy map to scratch )
   ( copy all to scratch )
-  MAP SCRATCH MAPSIZE CMOVE
+  MAPSIZE 2/ 0 DO
+    DUP MAPSIZE 2/ * I + SRAM@ SCRATCH I 2* + !
+  LOOP DROP
+
   ( adjust playfield values )
   SCRATCH COLUMNSIZE +
   COLUMNSIZE 20 * 0
-  DO    
+  DO
     DUP DUP C@ DUP
     BL = IF DROP EMPTY SWAP C! ELSE
     EMPTY OR SWAP C! THEN
@@ -1072,11 +1022,11 @@ DECIMAL
  DUP C@ WALL =
  IF DROP DROP           ( if WALL, do nothing )
  ELSE
-   DUP C@ DUP EMPTY = SWAP TARGET = OR 
+   DUP C@ DUP EMPTY = SWAP TARGET = OR
    IF STEP DROP         ( if Blank or Target, do Step)
    ELSE
      SWAP OVER +        ( over next position )
-     DUP C@ DUP EMPTY = SWAP TARGET = OR 
+     DUP C@ DUP EMPTY = SWAP TARGET = OR
      IF   PUSH          ( if Blank or Target, do Push )
      ELSE DROP DROP     ( else, do nothing )
      THEN
@@ -1094,7 +1044,7 @@ DECIMAL
   @ 0 <# # # # # #> TYPE ;
 
 : .SCORE ( update score )
-  3 28 AT #BOX  @ . 
+  3 28 AT #BOX  @ .
   5 28 AT #STEP .####
   7 28 AT #PUSH .#### ;
 
@@ -1129,7 +1079,7 @@ DECIMAL
   0 #STEP ! ( reset steps count )
   0 #PUSH ! ( reset pushes count )
   .FRAME
-  0 MAX 1 MIN DUP LEVEL !
+  0 MAX 29 MIN DUP LEVEL !
   MAP>SCRATCH
   SCRATCH>SCR
   SCAN ;
@@ -1142,8 +1092,8 @@ DECIMAL
 
 : BUTTONS $08F0 IO@ ; \ Read button state
 
-: BUTTON-TO-KEY 
-  BUTTONS 
+: BUTTON-TO-KEY
+  BUTTONS
   DUP 2 = IF [CHAR] I ELSE
   DUP 1 = IF [CHAR] K ELSE
   DUP 4 = IF [CHAR] J ELSE
@@ -1176,9 +1126,8 @@ DECIMAL
     #BOX @ 0=    ( No boxes left?)
     IF
       ." Done !" ( 100 50 BEEP 75 25 BEEP Level completed !)
-    THEN 
+    THEN
     [CHAR] Q = UNTIL
   ." Quit." ;
 
 ' PLAY INIT !
-
