@@ -72,18 +72,19 @@ module top(input clk_in, // 12 MHz
   wire        req_ready;    // true when request processed
   wire [7:0]  resp_data;  // one byte of memory
   wire        resp_valid; // asserted when a new byte is available
+  wire        loading; // FORTH image being loaded
 
   wire        spram_ready;
   wire [13:0] spram_address;
   wire        spram_req_valid;
   wire [31:0] spram_req_offset; // offset of file
-
+  reg         nstart_read = 1;
   // ######   Processor   #####################################
 
   j1 #( .MEMWORDS(6144) ) _j1( // 12 kb Memory
 
     .clk(clk),
-    .resetq(spram_ready),
+    .resetq(resetq),
     .pw_end(pw_end),
     .io_rd(io_rd),
     .io_wr(io_wr),
@@ -96,7 +97,8 @@ module top(input clk_in, // 12 MHz
     .req_valid(ram_req_valid),
     .req_ready(req_ready),
     .resp_data(resp_data),
-    .resp_valid(resp_valid)
+    .resp_valid(resp_valid),
+    .loading(loading)
   );
 
   // ######   Ticks   #########################################
@@ -138,27 +140,13 @@ module top(input clk_in, // 12 MHz
   // ######   SRAM   ############################################
 
   reg  [15:0] sram_addr;
+  wire [15:0] sram_in;
 
-  wire sram_wr = io_wr & io_addr[11] & (io_addr[7:4] == 1);
+  wire sram_wr = io_wr & io_addr[11] & (io_addr[8:4] == 1);
 
-  wire [15:0] sram_in_bank0, sram_in_bank1, sram_in_bank2, sram_in_bank3;
-/*
-    SB_SPRAM256KA rambank0 (
-        .DATAIN(io_dout),
-        .ADDRESS(sram_addr[13:0]),
-        .MASKWREN(4'b1111),
-        .WREN(sram_wr),
-        .CHIPSELECT(1'b1),
-        .CLOCK(clk),
-        .STANDBY(1'b0),
-        .SLEEP(~(sram_addr[15:14] == 2'b00)),
-        .POWEROFF(1'b1),
-        .DATAOUT(sram_in_bank0)
-);
-*/
-  spram16 my_spram (
+  spram16 _spram16 (
     .clk          (clk),
-    .rst          (~resetq),
+    .rst          (nstart_read),
     .pw_end       (pw_end),
     .req_valid    (spram_req_valid),
     .req_ready    (req_ready),
@@ -177,50 +165,8 @@ module top(input clk_in, // 12 MHz
     .standby      (1'b0),
     .sleep        (~(sram_addr[15:14] == 2'b00)),
     .poweroff     (1'b1),
-    .dataout      (sram_in_bank0)    
+    .dataout      (sram_in)
   );
-
-
-    SB_SPRAM256KA rambank1 (
-        .DATAIN(io_dout),
-        .ADDRESS(sram_addr[13:0]),
-        .MASKWREN(4'b1111),
-        .WREN(sram_wr),
-        .CHIPSELECT(1'b1),
-        .CLOCK(clk),
-        .STANDBY(1'b0),
-        .SLEEP(~(sram_addr[15:14] == 2'b01)),
-        .POWEROFF(1'b1),
-        .DATAOUT(sram_in_bank1)
-);
-
-    SB_SPRAM256KA rambank2 (
-        .DATAIN(io_dout),
-        .ADDRESS(sram_addr[13:0]),
-        .MASKWREN(4'b1111),
-        .WREN(sram_wr),
-        .CHIPSELECT(1'b1),
-        .CLOCK(clk),
-        .STANDBY(1'b0),
-        .SLEEP(~(sram_addr[15:14] == 2'b10)),
-        .POWEROFF(1'b1),
-        .DATAOUT(sram_in_bank2)
-);
-
-    SB_SPRAM256KA rambank3 (
-        .DATAIN(io_dout),
-        .ADDRESS(sram_addr[13:0]),
-        .MASKWREN(4'b1111),
-        .WREN(sram_wr),
-        .CHIPSELECT(1'b1),
-        .CLOCK(clk),
-        .STANDBY(1'b0),
-        .SLEEP(~(sram_addr[15:14] == 2'b11)),
-        .POWEROFF(1'b1),
-        .DATAOUT(sram_in_bank3)
-);
-
-  wire [15:0] sram_in = sram_in_bank3 | sram_in_bank2 | sram_in_bank1 | sram_in_bank0;
 
   // ######   UART   ##########################################
 
@@ -321,10 +267,10 @@ module top(input clk_in, // 12 MHz
   assign pw_irq[3:1] = 3'b000;
   assign irq_n = irq ? 1'b0 : 1'bz;
 
-
-  wire        req_valid = spram_ready ? ram_req_valid : spram_req_valid;
-  wire [31:0] req_file_id = spram_ready ? 32'hDABBAD00 : 32'hDABBAD01;
-  wire [31:0] req_offset = spram_ready ? ram_req_offset : spram_req_offset;
+  reg [7:0] fid = 0;
+  wire        req_valid = loading ? ram_req_valid : spram_req_valid;
+  wire [31:0] req_file_id = loading ? 32'hDABBAD00 : { 24'hDABBAD, fid };
+  wire [31:0] req_offset = loading ? ram_req_offset : spram_req_offset;
 
   spi_dev_fread #(
     .INTERFACE("STREAM")
@@ -565,7 +511,7 @@ Bits are mapped to the following keys:
       end
       else // Software control of the LCD wires for initialisation sequence or if software wants to slowly draw graphics
       begin
-        if (io_wr & io_addr[11] & (io_addr[7:4] == 10)) begin
+        if (io_wr & io_addr[11] & (io_addr[8:4] == 10)) begin
           {lcd_rs, lcd_d}  <= io_dout ^ 9'h100; // Data written with 9th bit set is written in command mode.
           lcd_write        <= 1;
         end
@@ -628,22 +574,22 @@ Bits are mapped to the following keys:
     (io_addr[ 9] ?                       pmod_out                                   : 16'd0) |
     (io_addr[10] ?                       pmod_dir                                   : 16'd0) |
 
-    (io_addr[11] & (io_addr[7:4] ==  0) ?  sram_addr                                : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  1) ?  sram_in                                  : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  2) ?  lcd_addr                                 : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  3) ?  read_font                                : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  4) ?  read_char                                : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  5) ?  color_fg0                                : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  6) ?  color_bg0                                : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  7) ?  color_fg1                                : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  8) ?  color_bg1                                : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  9) ?  {updating,fmark_sync2,lcd_mode,lcd_ctrl} : 16'd0) |
+    (io_addr[11] & (io_addr[8:4] ==  0) ?  sram_addr                                : 16'd0) |
+    (io_addr[11] & (io_addr[8:4] ==  1) ?  sram_in                                  : 16'd0) |
+    (io_addr[11] & (io_addr[8:4] ==  2) ?  lcd_addr                                 : 16'd0) |
+    (io_addr[11] & (io_addr[8:4] ==  3) ?  read_font                                : 16'd0) |
+    (io_addr[11] & (io_addr[8:4] ==  4) ?  read_char                                : 16'd0) |
+    (io_addr[11] & (io_addr[8:4] ==  5) ?  color_fg0                                : 16'd0) |
+    (io_addr[11] & (io_addr[8:4] ==  6) ?  color_bg0                                : 16'd0) |
+    (io_addr[11] & (io_addr[8:4] ==  7) ?  color_fg1                                : 16'd0) |
+    (io_addr[11] & (io_addr[8:4] ==  8) ?  color_bg1                                : 16'd0) |
+    (io_addr[11] & (io_addr[8:4] ==  9) ?  {updating,fmark_sync2,lcd_mode,lcd_ctrl} : 16'd0) |
     //                              10  ?  lcd_data, writeonly
-    (io_addr[11] & (io_addr[7:4] == 11) ?  {blue_in, green_in, red_in, LEDs}        : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] == 12) ?  sdm_red                                  : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] == 13) ?  sdm_green                                : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] == 14) ?  sdm_blue                                 : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] == 15) ?  buttonstate[26:16]                       : 16'd0) |
+    (io_addr[11] & (io_addr[8:4] == 11) ?  {blue_in, green_in, red_in, LEDs}        : 16'd0) |
+    (io_addr[11] & (io_addr[8:4] == 12) ?  sdm_red                                  : 16'd0) |
+    (io_addr[11] & (io_addr[8:4] == 13) ?  sdm_green                                : 16'd0) |
+    (io_addr[11] & (io_addr[8:4] == 14) ?  sdm_blue                                 : 16'd0) |
+    (io_addr[11] & (io_addr[8:4] == 15) ?  buttonstate[26:16]                       : 16'd0) |
 
     (io_addr[12] ?                       uart0_data                                 : 16'd0) |
     (io_addr[13] ?                       {random, uart0_valid, !uart0_busy}         : 16'd0) |
@@ -665,28 +611,31 @@ Bits are mapped to the following keys:
     if (io_wr & io_addr[10] & (io_addr[1:0] == 3))  pmod_dir  <=  pmod_dir  ^  io_dout; // Invert
 
 
-    if (io_wr & io_addr[11] & (io_addr[7:4] ==  0)) sram_addr <= io_dout;
+    if (io_wr & io_addr[11] & (io_addr[8:4] ==  0)) sram_addr <= io_dout;
     //                                          1   SRAM write needs special logic, elsewhere
-    if (io_wr & io_addr[11] & (io_addr[7:4] ==  2)) lcd_addr  <= io_dout;
-    if (io_wr & io_addr[11] & (io_addr[7:4] ==  3))       font[lcd_addr] <= io_dout[7:0];
-    if (io_wr & io_addr[11] & (io_addr[7:4] ==  4)) characters[lcd_addr] <= io_dout[7:0];
+    if (io_wr & io_addr[11] & (io_addr[8:4] ==  2)) lcd_addr  <= io_dout;
+    if (io_wr & io_addr[11] & (io_addr[8:4] ==  3))       font[lcd_addr] <= io_dout[7:0];
+    if (io_wr & io_addr[11] & (io_addr[8:4] ==  4)) characters[lcd_addr] <= io_dout[7:0];
 
-    if (io_wr & io_addr[11] & (io_addr[7:4] ==  5)) color_fg0 <= io_dout;
-    if (io_wr & io_addr[11] & (io_addr[7:4] ==  6)) color_bg0 <= io_dout;
-    if (io_wr & io_addr[11] & (io_addr[7:4] ==  7)) color_fg1 <= io_dout;
-    if (io_wr & io_addr[11] & (io_addr[7:4] ==  8)) color_bg1 <= io_dout;
+    if (io_wr & io_addr[11] & (io_addr[8:4] ==  5)) color_fg0 <= io_dout;
+    if (io_wr & io_addr[11] & (io_addr[8:4] ==  6)) color_bg0 <= io_dout;
+    if (io_wr & io_addr[11] & (io_addr[8:4] ==  7)) color_fg1 <= io_dout;
+    if (io_wr & io_addr[11] & (io_addr[8:4] ==  8)) color_bg1 <= io_dout;
 
-    if (io_wr & io_addr[11] & (io_addr[7:4] ==  9)) lcd_ctrl <= io_dout;
+    if (io_wr & io_addr[11] & (io_addr[8:4] ==  9)) lcd_ctrl <= io_dout;
     //                                         10   lcd_data write needs special logic, elsewhere
 
-    if (io_wr & io_addr[11] & (io_addr[7:4] == 11) & (io_addr[1:0] == 0))  LEDs      <=               io_dout;
-    if (io_wr & io_addr[11] & (io_addr[7:4] == 11) & (io_addr[1:0] == 1))  LEDs      <=  LEDs      & ~io_dout; // Clear
-    if (io_wr & io_addr[11] & (io_addr[7:4] == 11) & (io_addr[1:0] == 2))  LEDs      <=  LEDs      |  io_dout; // Set
-    if (io_wr & io_addr[11] & (io_addr[7:4] == 11) & (io_addr[1:0] == 3))  LEDs      <=  LEDs      ^  io_dout; // Invert
+    if (io_wr & io_addr[11] & (io_addr[8:4] == 11) & (io_addr[1:0] == 0))  LEDs      <=               io_dout;
+    if (io_wr & io_addr[11] & (io_addr[8:4] == 11) & (io_addr[1:0] == 1))  LEDs      <=  LEDs      & ~io_dout; // Clear
+    if (io_wr & io_addr[11] & (io_addr[8:4] == 11) & (io_addr[1:0] == 2))  LEDs      <=  LEDs      |  io_dout; // Set
+    if (io_wr & io_addr[11] & (io_addr[8:4] == 11) & (io_addr[1:0] == 3))  LEDs      <=  LEDs      ^  io_dout; // Invert
 
-    if (io_wr & io_addr[11] & (io_addr[7:4] == 12)) sdm_red   <= io_dout;
-    if (io_wr & io_addr[11] & (io_addr[7:4] == 13)) sdm_green <= io_dout;
-    if (io_wr & io_addr[11] & (io_addr[7:4] == 14)) sdm_blue  <= io_dout;
+    if (io_wr & io_addr[11] & (io_addr[8:4] == 12)) sdm_red   <= io_dout;
+    if (io_wr & io_addr[11] & (io_addr[8:4] == 13)) sdm_green <= io_dout;
+    if (io_wr & io_addr[11] & (io_addr[8:4] == 14)) sdm_blue  <= io_dout;
+
+    if (io_wr & io_addr[11] & (io_addr[8:4] == 16)) fid <= io_dout;
+    if (io_wr & io_addr[11] & (io_addr[8:4] == 17)) nstart_read <= io_dout;
 
   end
 endmodule

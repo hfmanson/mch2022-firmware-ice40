@@ -20,7 +20,9 @@ module j1(
 
   // "fread" response stream/fifo interface
   input  wire  [7:0] resp_data,
-  input  wire        resp_valid
+  input  wire        resp_valid,
+
+  output wire        loading
 );
 
   parameter MEMWORDS = 8192;       // Maximum of 8k words of 16 bits = 16 kb.
@@ -43,34 +45,55 @@ module j1(
   reg first;
   assign req_valid = req_valid_reg;
   assign req_offset = req_offset_reg;
+  assign loading = counter < MEMWORDS * 2;
+
+  // SPI loader state machine
   always @(posedge clk) begin
     if (!resetq) begin
       req_offset_reg <= 32'd0;
-      counter <= 16'd0;
-      req_valid_reg <= 1'b0;
-      buffercontent <= 32'hFFFFFFFF;
-      first <= 1'b1;
+      counter        <= 16'd0;
+      req_valid_reg  <= 1'b0;
+      buffercontent  <= 32'hFFFFFFFF;
+      first          <= 1'b1;
     end
-    else if (counter < MEMWORDS * 2) begin
-      if (req_valid_reg) req_valid_reg <= req_valid_reg & ~req_ready;
+
+    else if (loading) begin
+      if (req_valid_reg)
+        req_valid_reg <= req_valid_reg & ~req_ready;
+
       else if (buffercontent != req_offset_reg) begin
         buffercontent <= req_offset_reg;
         req_valid_reg <= 1;
-        first <= 1'b1;
+        first         <= 1'b1;
       end
+
       else begin
-        if (resp_valid) begin                
-          if (counter[0]) mem[counter >> 1] <= { resp_data, low_data }; else low_data <= resp_data;
+        if (resp_valid) begin
+          if (!counter[0])
+            low_data <= resp_data;   // moved here
           counter <= counter + 1;
-          first <= 1'b0;
+          first   <= 1'b0;
         end
-        if (pw_end & ~first) req_offset_reg <= req_offset_reg + 32'h800;
+
+        if (pw_end & ~first)
+          req_offset_reg <= req_offset_reg + 32'h800;
       end
     end
-    else begin
-      insn_from_memory <= mem[code_addr];
-      if (mem_wr) mem[io_addr[13:1]] <= io_dout;
-    end
+  end
+
+  // CPU instruction fetch (read-only port)
+  always @(posedge clk)
+    insn_from_memory <= mem[code_addr];
+
+  // Single write port for BRAM
+  always @(posedge clk) begin
+    // SPI loader writes
+    if (loading && resp_valid && counter[0])
+      mem[counter >> 1] <= { resp_data, low_data };
+
+    // CPU writes
+    else if (mem_wr)
+      mem[io_addr[13:1]] <= io_dout;
   end
 
   // ######   PROCESSOR   #####################################
@@ -215,14 +238,16 @@ module j1(
     endcase
   end
 
-  always @(negedge resetq or posedge clk)
+  wire cpu_resetq = resetq & ~loading;
+
+  always @(negedge cpu_resetq or posedge clk)
   begin
-    if (!resetq) begin
+    if (!cpu_resetq) begin
       notreboot <= 0;
       { pc, dsp, rsp, st0 } <= 0;
     end else begin
       notreboot <= 1;
-      { pc, dsp, rsp, st0 }  <= { pcN, dspN, rspN, st0N };
+      { pc, dsp, rsp, st0 } <= { pcN, dspN, rspN, st0N };
     end
   end
 
