@@ -199,6 +199,8 @@ CREATE SCRATCH MAPSIZE ALLOT
 
 : PLAY ( Main code, run this to play SokoACE)
   DINT LCD-INIT NOCAPTION
+  ( load levels from binding $DABBAD20 )
+  32 LOAD-SRAM
   +LCD
   SETGR     ( initialize graphics )
   0 INITLEVEL    ( start the first level )

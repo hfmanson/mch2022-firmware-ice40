@@ -11,11 +11,11 @@ gforth cross.fs instructionset.fs nucleus.fs
 rm cross.fs instructionset.fs
 echo ""
 
-echo "Compile additional Forth sources..."
-cat ../common-forth/coredefinitions.fs ../common/double.fs ../common/fixpoint.fs basisdefinitions.fs textmode.fs ../common-forth/insight-16kb.fs snake.fs > included.fs
 if [ ! -f ../common-crosscompiler/icecreammachine-16kb ]; then
     fpc -XX ../common-crosscompiler/icecreammachine-16kb.pas
 fi
+echo "Compile additional Forth sources..."
+cat ../common-forth/coredefinitions.fs ../common/double.fs ../common/fixpoint.fs basisdefinitions.fs textmode.fs ../common-mch2022/loader.fs ../common-forth/insight-16kb.fs snake.fs > included.fs
 ../common-crosscompiler/icecreammachine-16kb build/nucleus.hex build/iceimage.hex included.fs > build/log.txt
 
 md5sum build/nucleus.hex build/iceimage.hex
