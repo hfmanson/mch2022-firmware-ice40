@@ -1,4 +1,3 @@
-
 `default_nettype none
 
 module top(input clk_in, // 12 MHz
@@ -47,15 +46,8 @@ module top(input clk_in, // 12 MHz
 
   // ######   Reset logic   ###################################
 
-  wire reset_button = 1'b1; // No reset button on this board
-
   reg [15:0] reset_cnt = 0;
-  wire resetq = &reset_cnt;
-
-  always @(posedge clk) begin
-    if (reset_button) reset_cnt <= reset_cnt + !resetq;
-    else        reset_cnt <= 0;
-  end
+  wire resetq = &reset_cnt; 
 
   // ######   Bus   ###########################################
 
@@ -269,7 +261,7 @@ module top(input clk_in, // 12 MHz
 
   reg [7:0] fid = 0;
   wire        req_valid = loading ? ram_req_valid : spram_req_valid;
-  wire [31:0] req_file_id = loading ? 32'hDABBAD00 : { 24'hDABBAD, fid };
+  wire [31:0] req_file_id = { 24'hDABBAD, fid };
   wire [31:0] req_offset = loading ? ram_req_offset : spram_req_offset;
 
   spi_dev_fread #(
@@ -562,6 +554,10 @@ Bits are mapped to the following keys:
 
       08F0      Buttons
 
+      0900      File ID         lower 8 bits of File ID used for loading Forth images or SRAM
+      0910      SRAM load       set to 1 and then to 0 to load File ID into SRAM
+      0920      Reset           Reset Forth which triggers a load of File ID, default '32hDABBAD00
+
       1000  12  UART RX         UART TX
       2000  13  UART Flags
       4000  14  Ticks           Set Ticks
@@ -574,22 +570,22 @@ Bits are mapped to the following keys:
     (io_addr[ 9] ?                       pmod_out                                   : 16'd0) |
     (io_addr[10] ?                       pmod_dir                                   : 16'd0) |
 
-    (io_addr[11] & (io_addr[8:4] ==  0) ?  sram_addr                                : 16'd0) |
-    (io_addr[11] & (io_addr[8:4] ==  1) ?  sram_in                                  : 16'd0) |
-    (io_addr[11] & (io_addr[8:4] ==  2) ?  lcd_addr                                 : 16'd0) |
-    (io_addr[11] & (io_addr[8:4] ==  3) ?  read_font                                : 16'd0) |
-    (io_addr[11] & (io_addr[8:4] ==  4) ?  read_char                                : 16'd0) |
-    (io_addr[11] & (io_addr[8:4] ==  5) ?  color_fg0                                : 16'd0) |
-    (io_addr[11] & (io_addr[8:4] ==  6) ?  color_bg0                                : 16'd0) |
-    (io_addr[11] & (io_addr[8:4] ==  7) ?  color_fg1                                : 16'd0) |
-    (io_addr[11] & (io_addr[8:4] ==  8) ?  color_bg1                                : 16'd0) |
-    (io_addr[11] & (io_addr[8:4] ==  9) ?  {updating,fmark_sync2,lcd_mode,lcd_ctrl} : 16'd0) |
+    (io_addr[11] & (io_addr[7:4] ==  0) ?  sram_addr                                : 16'd0) |
+    (io_addr[11] & (io_addr[7:4] ==  1) ?  sram_in                                  : 16'd0) |
+    (io_addr[11] & (io_addr[7:4] ==  2) ?  lcd_addr                                 : 16'd0) |
+    (io_addr[11] & (io_addr[7:4] ==  3) ?  read_font                                : 16'd0) |
+    (io_addr[11] & (io_addr[7:4] ==  4) ?  read_char                                : 16'd0) |
+    (io_addr[11] & (io_addr[7:4] ==  5) ?  color_fg0                                : 16'd0) |
+    (io_addr[11] & (io_addr[7:4] ==  6) ?  color_bg0                                : 16'd0) |
+    (io_addr[11] & (io_addr[7:4] ==  7) ?  color_fg1                                : 16'd0) |
+    (io_addr[11] & (io_addr[7:4] ==  8) ?  color_bg1                                : 16'd0) |
+    (io_addr[11] & (io_addr[7:4] ==  9) ?  {updating,fmark_sync2,lcd_mode,lcd_ctrl} : 16'd0) |
     //                              10  ?  lcd_data, writeonly
-    (io_addr[11] & (io_addr[8:4] == 11) ?  {blue_in, green_in, red_in, LEDs}        : 16'd0) |
-    (io_addr[11] & (io_addr[8:4] == 12) ?  sdm_red                                  : 16'd0) |
-    (io_addr[11] & (io_addr[8:4] == 13) ?  sdm_green                                : 16'd0) |
-    (io_addr[11] & (io_addr[8:4] == 14) ?  sdm_blue                                 : 16'd0) |
-    (io_addr[11] & (io_addr[8:4] == 15) ?  buttonstate[26:16]                       : 16'd0) |
+    (io_addr[11] & (io_addr[7:4] == 11) ?  {blue_in, green_in, red_in, LEDs}        : 16'd0) |
+    (io_addr[11] & (io_addr[7:4] == 12) ?  sdm_red                                  : 16'd0) |
+    (io_addr[11] & (io_addr[7:4] == 13) ?  sdm_green                                : 16'd0) |
+    (io_addr[11] & (io_addr[7:4] == 14) ?  sdm_blue                                 : 16'd0) |
+    (io_addr[11] & (io_addr[7:4] == 15) ?  buttonstate[26:16]                       : 16'd0) |
 
     (io_addr[12] ?                       uart0_data                                 : 16'd0) |
     (io_addr[13] ?                       {random, uart0_valid, !uart0_busy}         : 16'd0) |
@@ -634,8 +630,13 @@ Bits are mapped to the following keys:
     if (io_wr & io_addr[11] & (io_addr[8:4] == 13)) sdm_green <= io_dout;
     if (io_wr & io_addr[11] & (io_addr[8:4] == 14)) sdm_blue  <= io_dout;
 
+    // SRAM loading
     if (io_wr & io_addr[11] & (io_addr[8:4] == 16)) fid <= io_dout;
     if (io_wr & io_addr[11] & (io_addr[8:4] == 17)) nstart_read <= io_dout;
+    // Forth image loading
+    if (io_wr & io_addr[11] & (io_addr[8:4] == 18)) reset_cnt <= io_dout; else reset_cnt = reset_cnt + !resetq;
 
+    // visual testing reset
+    //sdm_red <= resetq ? 'b0 : 'b1111111100000000;
   end
 endmodule
