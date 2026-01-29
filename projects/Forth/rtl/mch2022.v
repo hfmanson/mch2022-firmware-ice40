@@ -47,7 +47,7 @@ module top(input clk_in, // 12 MHz
   // ######   Reset logic   ###################################
 
   reg [15:0] reset_cnt = 0;
-  wire resetq = &reset_cnt; 
+  wire resetq = &reset_cnt;
 
   // ######   Bus   ###########################################
 
@@ -256,13 +256,17 @@ module top(input clk_in, // 12 MHz
     .irq           (irq)
   );
 
-  assign pw_irq[3:1] = 3'b000;
+  assign pw_irq[3:2] = 2'b00;
   assign irq_n = irq ? 1'b0 : 1'bz;
 
   reg [7:0] fid = 0;
   wire        req_valid = loading ? ram_req_valid : spram_req_valid;
   wire [31:0] req_file_id = { 24'hDABBAD, fid };
   wire [31:0] req_offset = loading ? ram_req_offset : spram_req_offset;
+  wire       pw_req_fread;
+  wire       pw_rstb_fread;
+  wire [7:0] pw_rdata_fread;
+
 
   spi_dev_fread #(
     .INTERFACE("STREAM")
@@ -275,10 +279,10 @@ module top(input clk_in, // 12 MHz
     .pw_wcmd      (pw_wcmd),
     .pw_wstb      (pw_wstb),
     .pw_end       (pw_end),
-    .pw_req       (pw_req),
+    .pw_req       (pw_req_fread),
     .pw_gnt       (pw_gnt),
-    .pw_rdata     (pw_rdata),
-    .pw_rstb      (pw_rstb),
+    .pw_rdata     (pw_rdata_fread),
+    .pw_rstb      (pw_rstb_fread),
     .pw_irq       (pw_irq[0]),
 
     // Read request interface
@@ -293,6 +297,45 @@ module top(input clk_in, // 12 MHz
     .resp_data    (resp_data),
     .resp_valid   (resp_valid)
   );
+
+  reg  [7:0] sound_id;
+  wire [7:0] req_sound_id = sound_id;
+  wire       sound_req_ready;
+  wire       sound_wr;
+  reg        sound_req_valid;
+  assign     sound_wr = (io_wr & io_addr[11] & (io_addr[8:4] == 19));
+  wire       pw_req_play_sound;
+  wire       pw_rstb_play_sound;
+  wire [7:0] pw_rdata_play_sound;
+
+  always @(posedge clk)
+    sound_req_valid <= (sound_req_valid & ~sound_req_ready) | sound_wr;
+
+  spi_dev_play_sound #(
+  ) _spi_dev_play_sound (
+    .clk (clk),
+    .rst (~resetq),
+
+    // SPI interface
+    .pw_wdata     (pw_wdata),
+    .pw_wcmd      (pw_wcmd),
+    .pw_wstb      (pw_wstb),
+    .pw_end       (pw_end),
+    .pw_req       (pw_req_play_sound),
+    .pw_gnt       (pw_gnt),
+    .pw_rdata     (pw_rdata_play_sound),
+    .pw_rstb      (pw_rstb_play_sound),
+    .pw_irq       (pw_irq[1]),
+	// Protocol wrapper interface
+
+	// "play_sound" request submit interface
+	.req_sound_id(req_sound_id),
+	.req_valid(sound_req_valid),
+	.req_ready(sound_req_ready)
+);
+  assign pw_req   = pw_req_play_sound ? pw_req_play_sound : pw_req_fread;
+  assign pw_rstb  = pw_req_play_sound ? pw_rstb_play_sound : pw_rstb_fread;
+  assign pw_rdata = pw_req_play_sound ? pw_rdata_play_sound : pw_rdata_fread;
 
   reg  [7:0] command;
   reg [31:0] incoming_data;
@@ -592,9 +635,7 @@ Bits are mapped to the following keys:
     (io_addr[14] ?                       ticks                                      : 16'd0) |
     (io_addr[15] ?                       cycles                                     : 16'd0) ;
 
-
   always @(posedge clk) begin
-
 
     if (io_wr & io_addr[ 9] & (io_addr[1:0] == 0))  pmod_out  <=               io_dout;
     if (io_wr & io_addr[ 9] & (io_addr[1:0] == 1))  pmod_out  <=  pmod_out  & ~io_dout; // Clear
@@ -635,6 +676,8 @@ Bits are mapped to the following keys:
     if (io_wr & io_addr[11] & (io_addr[8:4] == 17)) nstart_read <= io_dout;
     // Forth image loading
     if (io_wr & io_addr[11] & (io_addr[8:4] == 18)) reset_cnt <= io_dout; else reset_cnt = reset_cnt + !resetq;
+    // sound write
+    if (sound_wr) sound_id <= io_dout[7:0];
 
     // visual testing reset
     //sdm_red <= resetq ? 'b0 : 'b1111111100000000;

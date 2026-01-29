@@ -82,6 +82,24 @@ module spi_link (
 	wire        frd_rsp_valid;
 	wire        frd_rsp_ready;
 
+	// ------------------------------------------------------------
+	// Play Sound IF
+	// ------------------------------------------------------------
+
+	reg  [7:0] snd_id;
+	reg        snd_req_valid;
+	wire       snd_req_ready;
+
+	// Per-device SPI response IF
+	wire        pw_req_fread;
+	wire        pw_req_play_sound;
+
+	wire [7:0]  pw_rdata_fread;
+	wire [7:0]  pw_rdata_play_sound;
+
+	wire        pw_rstb_fread;
+	wire        pw_rstb_play_sound;
+
 
 	// Bus interface
 	// -------------
@@ -91,6 +109,7 @@ module spi_link (
 	reg         bus_we_ofs;
 	reg         bus_we_len;
 	reg         bus_re_dat;
+	reg         bus_we_snd;
 	wire [31:0] bus_rd_csr;
 
 	// Ack
@@ -107,11 +126,13 @@ module spi_link (
 			bus_we_ofs <= 1'b0;
 			bus_we_len <= 1'b0;
 			bus_re_dat <= 1'b0;
+			bus_we_snd <= 1'b0;
 		end else begin
 			bus_we_fid <=  wb_we & (wb_addr[2:0] == 3'b001);
 			bus_we_ofs <=  wb_we & (wb_addr[2:0] == 3'b010);
 			bus_we_len <=  wb_we & (wb_addr[2:0] == 3'b011);
 			bus_re_dat <= ~wb_we & (wb_addr[2:0] == 3'b100);
+			bus_we_snd <=  wb_we & (wb_addr[2:0] == 3'b101);
 		end
 
 	// Read mux
@@ -154,6 +175,16 @@ module spi_link (
 	always @(posedge clk)
 		frd_req_valid <= (frd_req_valid & ~frd_req_ready) | bus_we_len;
 
+	// ------------------------------------------------------------
+	// Play Sound request logic
+	// ------------------------------------------------------------
+
+	always @(posedge clk)
+		if (bus_we_snd)
+			snd_id <= wb_wdata[7:0];
+
+	always @(posedge clk)
+		snd_req_valid <= (snd_req_valid & ~snd_req_ready) | bus_we_snd;
 
 	// SPI device
 	// ----------
@@ -198,7 +229,7 @@ module spi_link (
 		.rst           (rst)
 	);
 
-	assign pw_irq[3:1] = 3'b000;
+	assign pw_irq[3:2] = 2'b00;
 	assign irq_n = irq ? 1'b0 : 1'bz;
 
 	// Command decoder for the F4 command
@@ -230,10 +261,10 @@ module spi_link (
 		.pw_wcmd      (pw_wcmd),
 		.pw_wstb      (pw_wstb),
 		.pw_end       (pw_end),
-		.pw_req       (pw_req),
+		.pw_req       (pw_req_fread),
 		.pw_gnt       (pw_gnt),
-		.pw_rdata     (pw_rdata),
-		.pw_rstb      (pw_rstb),
+		.pw_rdata     (pw_rdata_fread),
+		.pw_rstb      (pw_rstb_fread),
 		.pw_irq       (pw_irq[0]),
 		.req_file_id  (frd_req_file_id),
 		.req_offset   (frd_req_offset),
@@ -246,5 +277,43 @@ module spi_link (
 		.clk          (clk),
 		.rst          (rst)
 	);
+
+	// ------------------------------------------------------------
+	// Play Sound device (device 1)
+	// ------------------------------------------------------------
+
+	spi_dev_play_sound #(
+		.CMD_PLAY_SOUND(8'hfa)
+	) play_sound_I (
+		.clk          (clk),
+		.rst          (rst),
+
+		.pw_wdata     (pw_wdata),
+		.pw_wcmd      (pw_wcmd),
+		.pw_wstb      (pw_wstb),
+		.pw_end       (pw_end),
+
+		.pw_req       (pw_req_play_sound),
+		.pw_gnt       (pw_gnt),
+
+		.pw_rdata     (pw_rdata_play_sound),
+		.pw_rstb      (pw_rstb_play_sound),
+
+		.pw_irq       (pw_irq[1]),
+
+		.req_sound_id (snd_id),
+		.req_valid    (snd_req_valid),
+		.req_ready    (snd_req_ready)
+	);
+
+	// ------------------------------------------------------------
+	// Response arbiter (play_sound > fread)
+	// ------------------------------------------------------------
+
+	wire sel_play_sound = pw_req_play_sound;
+
+	assign pw_req   = sel_play_sound ? pw_req_play_sound : pw_req_fread;
+	assign pw_rdata = sel_play_sound ? pw_rdata_play_sound : pw_rdata_fread;
+	assign pw_rstb  = sel_play_sound ? pw_rstb_play_sound : pw_rstb_fread;
 
 endmodule // spi_link
