@@ -726,6 +726,21 @@ $F81F constant PINK        \  255,   0, 255
 \   navy   bg0 io!  \ Normal background
 \   cyan   fg1 io!  \ Highlight foreground
 \   navy   bg1 io!  \ Highlight background
+( loading forth images and SRAM data through FPGA bindings )
+( fid is LSB of $DABBAD00 )
+( download forth core and image and bindings )
+( examples )
+( on PC: fpga.py forth.bin 0xdabbad00:soko-image.bin  0xdabbad01:soko-maps.bin 0xdabbad02:snake-image.bin )
+( 2 load-forth )
+( inside sokoace code, to load levels )
+( 1 load-sram )
+
+: fid! ( fid -- ) $900 io! ;
+: load-sram ( fid -- ) fid! 1 $910 io! 0 $910 io! ;
+: load-forth ( fid -- ) fid! 1 $920 io! ;
+( play sounds through SPI using ESP32 soundserver )
+
+: sound! ( sid -- ) $930 io! ;
 
 \ #######   DUMP   ############################################
 
@@ -1011,7 +1026,7 @@ CREATE SCRATCH MAPSIZE ALLOT
 
 : PUSH ( a1 a2 -- , push a BOX)
   OVER C@ TARGET AND 15 AND IF #BOX INC THEN     ( Box entered a target region )
-  DUP  C@ DUP TARGET AND 15 AND IF #BOX DEC THEN ( Box exited a target area )
+  DUP  C@ DUP TARGET AND 15 AND IF #BOX DEC 1 SOUND! ELSE 0 SOUND! THEN ( Box exited a target area )
   TARGET AND BOX OR SWAP SCRATCH!                ( Move Box )
   STEP                                           ( Move Soko )
   #STEP DEC                                      ( Inc Pushes but not Steps )
@@ -1023,7 +1038,7 @@ CREATE SCRATCH MAPSIZE ALLOT
  IF DROP DROP           ( if WALL, do nothing )
  ELSE
    DUP C@ DUP EMPTY = SWAP TARGET = OR
-   IF STEP DROP         ( if Blank or Target, do Step)
+   IF STEP 0 SOUND! DROP         ( if Blank or Target, do Step)
    ELSE
      SWAP OVER +        ( over next position )
      DUP C@ DUP EMPTY = SWAP TARGET = OR
@@ -1114,6 +1129,8 @@ CREATE SCRATCH MAPSIZE ALLOT
 
 : PLAY ( Main code, run this to play SokoACE)
   DINT LCD-INIT NOCAPTION
+  ( load levels from binding $DABBAD20 )
+  32 LOAD-SRAM 70 MS
   +LCD
   SETGR     ( initialize graphics )
   0 INITLEVEL    ( start the first level )
@@ -1125,7 +1142,7 @@ CREATE SCRATCH MAPSIZE ALLOT
     1 9 AT
     #BOX @ 0=    ( No boxes left?)
     IF
-      ." Done !" ( 100 50 BEEP 75 25 BEEP Level completed !)
+      ." Done !" 2 SOUND! ( 100 50 BEEP 75 25 BEEP Level completed !)
     THEN
     [CHAR] Q = UNTIL
   ." Quit." ;
