@@ -31,6 +31,10 @@ module spi_link (
 	input  wire        wb_cyc,
 	output reg         wb_ack,
 
+	// spi keyboard output
+	output wire [31:0] kbd_rpt_data,
+	output wire        kbd_rpt_stb,
+
 	// Clock / Reset
 	input  wire        clk,
 	input  wire        rst
@@ -251,6 +255,22 @@ module spi_link (
 	always @(posedge clk)
 		if (btn_rpt_stb)
 			btn_rpt_state_cur <= btn_rpt_state;
+
+	// Command decoder for the FB command
+	// (keyboard reports from ESP32)
+	spi_dev_scmd #(
+		.CMD_BYTE (8'hfb),
+		.CMD_LEN  (1)
+	) scmd_fb_I (
+		.pw_wdata (pw_wdata),
+		.pw_wcmd  (pw_wcmd),
+		.pw_wstb  (pw_wstb),
+		.pw_end   (pw_end),
+		.cmd_data (kbd_rpt_data),
+		.cmd_stb  (kbd_rpt_stb),
+		.clk      (clk),
+		.rst      (rst)
+	);
 
 	// File Reader
 	spi_dev_fread #(

@@ -47,7 +47,7 @@ module top (
 	input  wire       clk_in
 );
 
-	localparam integer WB_N  =  5;
+	localparam integer WB_N  =  6;
 
 	localparam integer WB_DW = 32;
 	localparam integer WB_AW = 22;
@@ -132,6 +132,10 @@ module top (
 	wire [ 3:0] phy_io_oe;
 	wire [ 3:0] phy_clk_o;
 	wire        phy_cs_o;
+
+	// keyboard
+	wire [31:0] kbd_rpt_data;
+	wire        kbd_rpt_stb;
 
 	// Wishbone
 	wire [WB_AW-1:0] wb_addr;
@@ -452,10 +456,28 @@ module top (
 		.wb_we    (wb_we),
 		.wb_cyc   (wb_cyc[4]),
 		.wb_ack   (wb_ack[4]),
+		.kbd_rpt_data (kbd_rpt_data),
+		.kbd_rpt_stb (kbd_rpt_stb),
 		.clk      (clk_1x),
 		.rst      (rst)
 	);
 
+	// KEYBOARD [5]
+	// -----
+
+	kbd_wb #(
+	) kbd_I (
+		.wb_addr     (wb_addr[1:0]),
+		.wb_rdata    (wb_rdata[5]),
+		.wb_wdata    (wb_wdata),
+		.wb_we       (wb_we),
+		.wb_cyc      (wb_cyc[5]),
+		.wb_ack      (wb_ack[5]),
+		.kbd_rx_data (kbd_rpt_data),
+		.kbd_rx_stb  (kbd_rpt_stb),
+		.clk         (clk_1x),
+		.rst         (rst)
+	);
 
 	// Clock / Reset
 	// -------------

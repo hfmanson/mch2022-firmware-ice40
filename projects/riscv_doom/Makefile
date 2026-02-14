@@ -9,6 +9,7 @@ PROJ_RTL_SRCS := $(addprefix rtl/, \
 	soc_bram.v \
 	spi_link.v \
 	spi_dev_play_sound.v \
+	kbd_wb.v \
 	sysmgr.v \
 	VexRiscv.v \
 )
