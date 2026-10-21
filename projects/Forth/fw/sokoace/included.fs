@@ -736,7 +736,7 @@ $F81F constant PINK        \  255,   0, 255
 ( 1 load-sram )
 
 : fid! ( fid -- ) $900 io! ;
-: load-sram ( fid -- ) fid! 1 $910 io! 0 $910 io! ;
+: load-sram ( fid -- ) fid! 1 $910 io! ;
 : load-forth ( fid -- ) fid! 1 $920 io! ;
 ( play sounds through SPI using ESP32 soundserver )
 

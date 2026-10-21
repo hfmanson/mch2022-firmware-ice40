@@ -8,5 +8,5 @@
 ( 1 load-sram )
 
 : fid! ( fid -- ) $900 io! ;
-: load-sram ( fid -- ) fid! 1 $910 io! 0 $910 io! ;
+: load-sram ( fid -- ) fid! 1 $910 io! ;
 : load-forth ( fid -- ) fid! 1 $920 io! ;

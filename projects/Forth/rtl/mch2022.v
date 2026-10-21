@@ -67,10 +67,8 @@ module top(input clk_in, // 12 MHz
   wire        loading; // FORTH image being loaded
 
   wire        spram_ready;
-  wire [13:0] spram_address;
   wire        spram_req_valid;
   wire [31:0] spram_req_offset; // offset of file
-  reg         nstart_read = 1;
   // ######   Processor   #####################################
 
   j1 #( .MEMWORDS(6144) ) _j1( // 12 kb Memory
@@ -134,11 +132,11 @@ module top(input clk_in, // 12 MHz
   reg  [15:0] sram_addr;
   wire [15:0] sram_in;
 
-  wire sram_wr = io_wr & io_addr[11] & (io_addr[8:4] == 1);
-
+  wire sram_wr   = io_wr & io_addr[11] & (io_addr[8:4] == 1);
+  wire start_dma = io_wr & io_addr[11] & (io_addr[8:4] == 17);
   spram16 _spram16 (
     .clk          (clk),
-    .rst          (nstart_read),
+    .start_dma    (start_dma),
     .pw_end       (pw_end),
     .req_valid    (spram_req_valid),
     .req_ready    (req_ready),
@@ -150,13 +148,9 @@ module top(input clk_in, // 12 MHz
     .ram_ready    (spram_ready),
     // SB_SPRAM256KA interface
     .datain       (io_dout),
-    .address      (sram_addr[13:0]),
+    .address      (sram_addr),
     .maskwren     (4'b1111),
     .wren         (sram_wr),
-    .chipselect   (1'b1),
-    .standby      (1'b0),
-    .sleep        (~(sram_addr[15:14] == 2'b00)),
-    .poweroff     (1'b1),
     .dataout      (sram_in)
   );
 
@@ -673,7 +667,7 @@ Bits are mapped to the following keys:
 
     // SRAM loading
     if (io_wr & io_addr[11] & (io_addr[8:4] == 16)) fid <= io_dout;
-    if (io_wr & io_addr[11] & (io_addr[8:4] == 17)) nstart_read <= io_dout;
+    //                                         17)) trigger load, elsewhere
     // Forth image loading
     if (io_wr & io_addr[11] & (io_addr[8:4] == 18)) reset_cnt <= io_dout; else reset_cnt = reset_cnt + !resetq;
     // sound write

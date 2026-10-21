@@ -18,9 +18,6 @@ PROJ_RTL_SRCS := $(addprefix rtl/, \
 	common-verilog/uart-fifo.v \
 	sysmgr.v \
 )
-PROJ_PREREQ = \
-      $(BUILD_TMP)/iceimage.hex \
-      $(NULL)
 PROJ_TOP_SRC := rtl/mch2022.v rtl/spram16.v rtl/spi_dev_play_sound.v
 PROJ_TOP_MOD := top
 
@@ -38,7 +35,3 @@ PIN_DEF := ../_common/data/$(BOARD).pcf
 
 # Include default rules
 include ../_common/build.mk
-
-# Custom rules
-$(BUILD_TMP)/iceimage.hex:
-	cp rtl/iceimage.hex $@
