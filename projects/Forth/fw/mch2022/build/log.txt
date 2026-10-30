@@ -1041,6 +1041,157 @@ Mecrisp-Ice 2.6
 ;  ok.
   ok.
 ' pmod-lab init !  ok.
+320,0 2constant width  ok.
+240,0 2constant height  ok.
+  ok.
+0,0 2variable sx  ok.
+0,0 2variable cx  ok.
+0,0 2variable sy  ok.
+0,0 2variable cy  ok.
+  ok.
+: lcd-erase  ok.
+ -lcd dint nocaption lcd-init page  ok.
+;  ok.
+  ok.
+: window ( rx lx ty by -- )  ok.
+ 2over 2over d- height 2swap f/ sy 2!  ok.
+ 0. 2swap d- sy 2@ f* cy 2! 2drop  ok.
+ 2over 2over d- width  2swap f/ sx 2!  ok.
+ 0. 2swap d- sx 2@ f* cx 2! 2drop  ok.
+;  ok.
+  ok.
+: setpixel ( x y -- )  ok.
+ $2A cmd>lcd dup 8 rshift dup >lcd over >lcd >lcd >lcd  ok.
+ $2B cmd>lcd dup 8 rshift dup >lcd over >lcd >lcd >lcd  ok.
+ $2C cmd>lcd $FF >lcd $FF >lcd  ok.
+;  ok.
+  ok.
+: pset ( x y -- )  ok.
+ sy 2@ f* cy 2@ d+ nip >r  ok.
+ sx 2@ f* cx 2@ d+ nip r>  ok.
+ setpixel  ok.
+;  ok.
+  ok.
+0,0 2variable a  ok.
+0,0 2variable b  ok.
+0,0 2variable c  ok.
+  ok.
+: w ( x -- w )  ok.
+ 2dup  ok.
+ 2dup  ok.
+ f*  ok.
+ 2dup  ok.
+ c 2@ f*  ok.
+ 2swap  ok.
+ 1,0  ok.
+ d+  ok.
+ f/  ok.
+ 2swap  ok.
+ a 2@ f*  ok.
+ d+  ok.
+;  ok.
+  ok.
+: mira ( x y -- )  ok.
+ 2over w  ok.
+ ( x y w )  ok.
+ >r >r  ok.
+  ok.
+ ( x y, w on rstack )  ok.
+ begin  ok.
+ ( x y )  ok.
+ 2over 2over pset  ok.
+ ( x y )  ok.
+ r> r>  ok.
+ ( x y w )  ok.
+ 2swap  ok.
+ ( x w y )  ok.
+ b 2@ f*  ok.
+ ( x w y*b )  ok.
+ d+  ok.
+ ( x x1 )  ok.
+ 2dup  ok.
+ ( x x1 x1 )  ok.
+ w  ok.
+ ( x x1 w1)  ok.
+ 2dup  ok.
+ ( x x1 w1 w1)  ok.
+ >r >r  ok.
+ ( x x1 w1)  ok.
+ >r >r  ok.
+ ( x x1 )  ok.
+ 2swap  ok.
+ ( x1 x )  ok.
+ r> r>  ok.
+ ( x1 x w1)  ok.
+ 2swap  ok.
+ ( x1 w1 x)  ok.
+ d-  ok.
+ ( x1 w1-x)  ok.
+ esc?  ok.
+ until  ok.
+ r> r>  ok.
+ 2drop  ok.
+ 2drop  ok.
+ 2drop  ok.
+;  ok.
+  ok.
+  ok.
+  ok.
+: demo1  ok.
+lcd-erase  ok.
+( rx: 12.0, lx: -9.0, ty: 6.5, by: -10.5 )  ok.
+12,0 -9,0 6,5 -10,5 window  ok.
+( a: -0.48 )  ok.
+-0,48 a 2!  ok.
+( b: 0.94 )  ok.
+0,94 b 2!  ok.
+( c: 2.0 - 2.0 * a )  ok.
+2,0 2,0 a 2@ f* d- c 2!  ok.
+( 4.0 0.0 mira )  ok.
+4,0 0,0 mira  ok.
+;  ok.
+  ok.
+: demo2  ok.
+lcd-erase  ok.
+( rx: 12.0, lx: -9.0, ty: 10.5, by: -10.5 )  ok.
+12,0 -9,0 10,5 -10,5 window  ok.
+( a: -0.4 )  ok.
+-0,4 a 2!  ok.
+( b: 0.99 )  ok.
+0,99 b 2!  ok.
+( c: 2.0 - 2.0 * a )  ok.
+2,0 2,0 a 2@ f* d- c 2!  ok.
+( 4.0 0.0 mira )  ok.
+4,0 0,0 mira  ok.
+;  ok.
+  ok.
+: demo3  ok.
+lcd-erase  ok.
+( rx: 20.0, lx: -20.0, ty: 15.0, by: -15.0 )  ok.
+20,0 -20,0 15,0 -15,0 window  ok.
+( a: 0.7 )  ok.
+0,7 a 2!  ok.
+( b: 0.9998 )  ok.
+0,9998 b 2!  ok.
+( c: 2.0 - 2.0 * a )  ok.
+2,0 2,0 a 2@ f* d- c 2!  ok.
+( 0.0 12.0 mira )  ok.
+0,0 12,0 mira  ok.
+;  ok.
+  ok.
+: demo4  ok.
+lcd-erase  ok.
+( rx: 100.0, lx: -100.0, ty: 100.0, by: -100.0 )  ok.
+40,0 -40,0 40,0 -40,0 window  ok.
+( a: 0.31 )  ok.
+0,31 a 2!  ok.
+( b: 1.0 )  ok.
+1,0 b 2!  ok.
+( c: 2.0 - 2.0 * a )  ok.
+2,0 2,0 a 2@ f* d- c 2!  ok.
+( 0.0 12.0 mira )  ok.
+12,0 0,0 mira  ok.
+;  ok.
   ok.
 \ #######   DUMP   ############################################  ok.
   ok.
