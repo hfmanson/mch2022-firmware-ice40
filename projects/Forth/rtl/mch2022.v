@@ -13,7 +13,6 @@ module top(input clk_in, // 12 MHz
            input  spi_clk,
            input  spi_cs_n,
 
-
            // LCD
            output reg  [7:0] lcd_d,
            output reg        lcd_rs,
@@ -69,6 +68,7 @@ module top(input clk_in, // 12 MHz
   wire        spram_ready;
   wire        spram_req_valid;
   wire [31:0] spram_req_offset; // offset of file
+  
   // ######   Processor   #####################################
 
   j1 #( .MEMWORDS(6144) ) _j1( // 12 kb Memory
@@ -428,127 +428,22 @@ Bits are mapped to the following keys:
   wire random = ~buffers_out[1];
 
   // ######   LCD   ###########################################
-
-  // Software control of special wires
-
-  reg [1:0] lcd_ctrl = 2'b01;
-  assign {lcd_rst_n, lcd_cs_n} = lcd_ctrl;
-
-  // Set WR in the second half of the clock cycle using DDR pin mode to allow the data lines to settle
-
-  SB_IO #(.PIN_TYPE(6'b0100_01)) lcdwrn (.OUTPUT_CLK(clk), .PACKAGE_PIN(lcd_wr_n), .D_OUT_0(1'b0), .D_OUT_1(lcd_write), .OUTPUT_ENABLE(1'b1));
-  reg lcd_write = 0;
-
-  // Framebuffer & font data
-
-  reg [10:0] lcd_addr;
-  reg [7:0] characters [3*512-1:0]; // [1199:0] is sufficient, but RAM blocks come in 512 bytes...
-  reg [7:0]       font [1023:0]; initial $readmemh("font-c64-ascii.hex", font);
-
-  reg [7:0] read_char;
-  reg [7:0] read_font;
-
-  // Color registers for a beautiful output
-
-  reg [15:0] color_fg0 = 16'hFD20; // Orange
-  reg [15:0] color_bg0 = 16'h000F; // Navy
-  reg [15:0] color_fg1 = 16'h07FF; // Cyan
-  reg [15:0] color_bg1 = 16'h000F; // Navy
-
-  // Internal signals for textmode generation
-
-  reg toggle = 0;
-  reg fmark_sync1 = 0;
-  reg fmark_sync2 = 0;
-  reg updating = 0;
-
-  reg [8:0] xpos; // 0 to 320-1
-  reg [7:0] ypos; // 0 to 240-1
-
-  reg [7:0] char;
-  reg [7:0] bitmap;
-  reg [8:0] data0, data1;
-
-  reg [2:0] fontrow;
-  reg colorswitch;
-  reg [10:0] characterindex;
-
-  always @(posedge clk) begin
-
-    // Reads from font data set & character buffer
-
-    char   <= characters[toggle ? characterindex : lcd_addr            ]; // 7-Bit ASCII. Using char[7] for alternate colors.
-    bitmap <=       font[toggle ? lcd_addr       : {char[6:0], fontrow}]; // 8x8 pixel font bitmap data.
-
-    case (toggle)
-      0: read_font <= bitmap; // Software can read these values three clock cycles after setting the address.
-      1: read_char <= char;
-    endcase
-
-    toggle <= ~toggle; // Toggle between high and low part of data to LCD and between logic and software read access.
-
-    characterindex <= 0;
-    fontrow <= 0;
-
-    // Synchronise incoming asynchronous VSYNC signal to clk
-
-    fmark_sync1 <= lcd_fmark;
-    fmark_sync2 <= fmark_sync1;
-
-    // Logik to push data to LCD
-
-    if (fmark_sync2 & ~updating) // VSYNC active and not yet updating?
-    begin
-      xpos <= 0;
-      ypos <= 1;
-
-      data0 <= {1'b0, 8'h00}; //   NOP command
-      data1 <= {1'b0, 8'h2C}; // RAMWR command
-
-      lcd_write <= 0;       // Nothing to write
-      updating <= toggle; // Start when toggle is high, updating starts with toggle low in next cycle.
-    end
-    else
-    begin
-      if (updating) // Currently updating? Push data. One more pair of data is pushed for RAMWR command.
-      begin
-        lcd_write <= 1;
-
-        case (toggle)
-          0: begin
-               {lcd_rs, lcd_d} <= data0;
-               colorswitch <= char[7]; // Using MSB of character to switch to a different set of colors
-               characterindex <= xpos[8:3] + 40 * ypos[7:3];
-             end
-
-          1: begin
-               {lcd_rs, lcd_d} <= data1;
-
-               {data1, data0} <= bitmap[~xpos[2:0]] ?
-                             colorswitch ? {1'b1, color_fg1[7:0], 1'b1, color_fg1[15:8]} :
-                                           {1'b1, color_fg0[7:0], 1'b1, color_fg0[15:8]} :
-                             colorswitch ? {1'b1, color_bg1[7:0], 1'b1, color_bg1[15:8]} :
-                                           {1'b1, color_bg0[7:0], 1'b1, color_bg0[15:8]} ;
-
-               fontrow <= ypos[2:0];
-
-               if (ypos == 239) begin xpos <= xpos + 1; ypos <= 0; end else ypos <= ypos + 1;
-               updating <= ~((xpos == 320) & (ypos == 1));
-             end
-        endcase
-
-      end
-      else // Software control of the LCD wires for initialisation sequence or if software wants to slowly draw graphics
-      begin
-        if (io_wr & io_addr[11] & (io_addr[8:4] == 10)) begin
-          {lcd_rs, lcd_d}  <= io_dout ^ 9'h100; // Data written with 9th bit set is written in command mode.
-          lcd_write        <= 1;
-        end
-        else
-          lcd_write <= 0;
-      end
-    end
-  end
+  wire [15:0] io_lcd_din;
+    
+  lcd _lcd (
+    .clk (clk),
+    .io_wr (io_wr),
+	.io_addr (io_addr),
+	.io_dout (io_dout),
+	.io_din (io_lcd_din),
+	.lcd_d (lcd_d),
+	.lcd_rs (lcd_rs),
+	.lcd_wr_n (lcd_wr_n),
+	.lcd_cs_n (lcd_cs_n),
+	.lcd_rst_n (lcd_rst_n),
+	.lcd_fmark (lcd_fmark),
+	.lcd_mode (lcd_mode)
+);
 
   // ######   IO Ports   ######################################
 
@@ -594,6 +489,10 @@ Bits are mapped to the following keys:
       0900      File ID         lower 8 bits of File ID used for loading Forth images or SRAM
       0910      SRAM load       set to 1 and then to 0 to load File ID into SRAM
       0920      Reset           Reset Forth which triggers a load of File ID, default '32hDABBAD00
+      0930      Sound           play sound on ESP32
+	  0940      pixel           set color and draw pixel
+	  0950      X               pixel X ooordinate
+	  0960      Y               pixel Y ooordinate
 
       1000  12  UART RX         UART TX
       2000  13  UART Flags
@@ -609,15 +508,7 @@ Bits are mapped to the following keys:
 
     (io_addr[11] & (io_addr[7:4] ==  0) ?  sram_addr                                : 16'd0) |
     (io_addr[11] & (io_addr[7:4] ==  1) ?  sram_in                                  : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  2) ?  lcd_addr                                 : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  3) ?  read_font                                : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  4) ?  read_char                                : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  5) ?  color_fg0                                : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  6) ?  color_bg0                                : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  7) ?  color_fg1                                : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  8) ?  color_bg1                                : 16'd0) |
-    (io_addr[11] & (io_addr[7:4] ==  9) ?  {updating,fmark_sync2,lcd_mode,lcd_ctrl} : 16'd0) |
-    //                              10  ?  lcd_data, writeonly
+	                                       io_lcd_din                                        |
     (io_addr[11] & (io_addr[7:4] == 11) ?  {blue_in, green_in, red_in, LEDs}        : 16'd0) |
     (io_addr[11] & (io_addr[7:4] == 12) ?  sdm_red                                  : 16'd0) |
     (io_addr[11] & (io_addr[7:4] == 13) ?  sdm_green                                : 16'd0) |
@@ -630,7 +521,6 @@ Bits are mapped to the following keys:
     (io_addr[15] ?                       cycles                                     : 16'd0) ;
 
   always @(posedge clk) begin
-
     if (io_wr & io_addr[ 9] & (io_addr[1:0] == 0))  pmod_out  <=               io_dout;
     if (io_wr & io_addr[ 9] & (io_addr[1:0] == 1))  pmod_out  <=  pmod_out  & ~io_dout; // Clear
     if (io_wr & io_addr[ 9] & (io_addr[1:0] == 2))  pmod_out  <=  pmod_out  |  io_dout; // Set
@@ -644,18 +534,6 @@ Bits are mapped to the following keys:
 
     if (io_wr & io_addr[11] & (io_addr[8:4] ==  0)) sram_addr <= io_dout;
     //                                          1   SRAM write needs special logic, elsewhere
-    if (io_wr & io_addr[11] & (io_addr[8:4] ==  2)) lcd_addr  <= io_dout;
-    if (io_wr & io_addr[11] & (io_addr[8:4] ==  3))       font[lcd_addr] <= io_dout[7:0];
-    if (io_wr & io_addr[11] & (io_addr[8:4] ==  4)) characters[lcd_addr] <= io_dout[7:0];
-
-    if (io_wr & io_addr[11] & (io_addr[8:4] ==  5)) color_fg0 <= io_dout;
-    if (io_wr & io_addr[11] & (io_addr[8:4] ==  6)) color_bg0 <= io_dout;
-    if (io_wr & io_addr[11] & (io_addr[8:4] ==  7)) color_fg1 <= io_dout;
-    if (io_wr & io_addr[11] & (io_addr[8:4] ==  8)) color_bg1 <= io_dout;
-
-    if (io_wr & io_addr[11] & (io_addr[8:4] ==  9)) lcd_ctrl <= io_dout;
-    //                                         10   lcd_data write needs special logic, elsewhere
-
     if (io_wr & io_addr[11] & (io_addr[8:4] == 11) & (io_addr[1:0] == 0))  LEDs      <=               io_dout;
     if (io_wr & io_addr[11] & (io_addr[8:4] == 11) & (io_addr[1:0] == 1))  LEDs      <=  LEDs      & ~io_dout; // Clear
     if (io_wr & io_addr[11] & (io_addr[8:4] == 11) & (io_addr[1:0] == 2))  LEDs      <=  LEDs      |  io_dout; // Set
@@ -670,9 +548,8 @@ Bits are mapped to the following keys:
     //                                         17)) trigger load, elsewhere
     // Forth image loading
     if (io_wr & io_addr[11] & (io_addr[8:4] == 18)) reset_cnt <= io_dout; else reset_cnt = reset_cnt + !resetq;
-    // sound write
+    // sound write                             19
     if (sound_wr) sound_id <= io_dout[7:0];
-
     // visual testing reset
     //sdm_red <= resetq ? 'b0 : 'b1111111100000000;
   end

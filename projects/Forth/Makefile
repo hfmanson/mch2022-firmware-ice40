@@ -18,7 +18,7 @@ PROJ_RTL_SRCS := $(addprefix rtl/, \
 	common-verilog/uart-fifo.v \
 	sysmgr.v \
 )
-PROJ_TOP_SRC := rtl/mch2022.v rtl/spram16.v rtl/spi_dev_play_sound.v
+PROJ_TOP_SRC := rtl/mch2022.v rtl/lcd.v rtl/spram16.v rtl/spi_dev_play_sound.v
 PROJ_TOP_MOD := top
 
 # Toolchain config

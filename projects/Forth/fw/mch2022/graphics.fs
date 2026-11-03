@@ -15,7 +15,7 @@
 
 \ -----------------------------------------------------------------------------
 
-: lcd-init ( -- )
+: lcd-init-graphics ( -- )
 
   ." Trying to get access to LCD... Press ESC to exit." cr
 
@@ -60,6 +60,11 @@
 
   $11 ( ILI9341_SLPOUT    ) cmd>lcd
   $29 ( ILI9341_DISPON    ) cmd>lcd
+;
+
+: lcd-init
+  lcd-init-graphics
+  $35 ( ILI9341_TEON      ) cmd>lcd $00 >lcd
 ;
 
 \ -----------------------------------------------------------------------------

@@ -1,0 +1,1508 @@
+
+Mecrisp-Ice 2.6
+
+  ok.
+\ Definitions in high-level Forth that can be compiled by the small  ok.
+\ nucleus itself. They are included into the bitstream for default.  ok.
+  ok.
+\ #######   CORE   ############################################  ok.
+  ok.
+: [']  ok.
+    '  ok.
+; immediate 0 foldable  ok.
+  ok.
+: [char]  ok.
+    char  ok.
+; immediate 0 foldable  ok.
+  ok.
+: (  ok.
+    [char] ) parse 2drop  ok.
+; immediate 0 foldable  ok.
+  ok.
+: u>= ( u1 u2 -- ? ) u< invert ; 2 foldable  ok.
+: u<= ( u1 u2 -- ? ) u> invert ; 2 foldable  ok.
+: >=  ( n1 n2 -- ? )  < invert ; 2 foldable  ok.
+: <=  ( n1 n2 -- ? )  > invert ; 2 foldable  ok.
+  ok.
+: else  ok.
+    postpone ahead  ok.
+    swap  ok.
+    postpone then  ok.
+; immediate  ok.
+  ok.
+: while  ok.
+    postpone if  ok.
+    swap  ok.
+; immediate  ok.
+  ok.
+: repeat  ok.
+     postpone again  ok.
+     postpone then  ok.
+; immediate  ok.
+  ok.
+: create ( "<name>" -- ; -- addr )  ok.
+    :  ok.
+    here 2 cells + postpone literal  ok.
+    postpone ;  ok.
+;  ok.
+  ok.
+: buffer: ( u "<name>" -- ; -- addr )  ok.
+   create allot 0 foldable  ok.
+;  ok.
+  ok.
+: >body ( addr -- addr' )  ok.
+    @ -1 1 rshift and \ Remove the literal opcode MSB  ok.
+;  ok.
+  ok.
+: m* ( n1 n2 -- d )  ok.
+    2dup xor >r  ok.
+    abs swap abs um*  ok.
+    r> 0< if dnegate then  ok.
+; 2 foldable  ok.
+  ok.
+: variable ( x "name" -- ; -- addr )  ok.
+    create ,  ok.
+    0 foldable  ok.
+;  ok.
+  ok.
+: constant ( x "name" -- ; -- x ) : postpone literal postpone ; 0 foldable ;  ok
+.
+  ok.
+: sgn ( u1 n1 -- n2 ) \ n2 is u1 with the sign of n1  ok.
+    0< if negate then  ok.
+; 2 foldable  ok.
+  ok.
+\ Divide d1 by n1, giving the symmetric quotient n3 and the remainder  ok.
+\ n2.  ok.
+: sm/rem ( d1 n1 -- n2 n3 )  ok.
+    2dup xor >r     \ combined sign, for quotient  ok.
+    over >r         \ sign of dividend, for remainder  ok.
+    abs >r dabs r>  ok.
+    um/mod          ( remainder quotient )  ok.
+    swap r> sgn     \ apply to remainder  ok.
+    swap r> sgn     \ apply to quotient  ok.
+; 3 foldable  ok.
+  ok.
+\ Divide d1 by n1, giving the floored quotient n3 and the remainder n2.  ok.
+\ Adapted from hForth  ok.
+: fm/mod ( d1 n1 -- n2 n3 )  ok.
+    dup >r 2dup xor >r  ok.
+    >r dabs r@ abs  ok.
+    um/mod  ok.
+    r> 0< if  ok.
+        swap negate swap  ok.
+    then  ok.
+    r> 0< if  ok.
+        negate         \ negative quotient  ok.
+        over if  ok.
+            r@ rot - swap 1-  ok.
+        then  ok.
+    then  ok.
+    r> drop  ok.
+; 3 foldable  ok.
+  ok.
+: */mod ( n1 n2 n3 -- n4 n5 ) >r m* r> sm/rem ; 3 foldable  ok.
+: */    ( n1 n2 n3 -- n4 )    */mod nip ; 3 foldable  ok.
+  ok.
+: spaces ( n -- )  ok.
+    begin  ok.
+        dup 0>  ok.
+    while  ok.
+        space 1-  ok.
+    repeat  ok.
+    drop  ok.
+;  ok.
+  ok.
+( Pictured numeric output                    JCB 08:06 07/18/14)  ok.
+\ Adapted from hForth  ok.
+  ok.
+\ "The size of the pictured numeric output string buffer shall  ok.
+\ be at least (2*n) + 2 characters, where n is the number of  ok.
+\ bits in a cell."  ok.
+  ok.
+create BUF0  ok.
+16 cells 2 + 128 max  ok.
+allot here constant BUF  ok.
+  ok.
+0 variable hld  ok.
+  ok.
+: <# ( -- )  ok.
+    BUF hld !  ok.
+;  ok.
+  ok.
+: hold ( c -- )  ok.
+    hld @ 1- dup hld ! c!  ok.
+;  ok.
+  ok.
+: sign ( n -- )  ok.
+    0< if  ok.
+        [char] - hold  ok.
+    then  ok.
+;  ok.
+  ok.
+: .digit ( u -- c )  ok.
+  9 over <  ok.
+  [char] A [char] 9 1 + -  ok.
+  and +  ok.
+  [char] 0 +  ok.
+;  ok.
+  ok.
+: # ( ud -- ud* )  ok.
+    0 base @ um/mod >r base @ um/mod swap  ok.
+    .digit hold r>  ok.
+;  ok.
+  ok.
+: #s ( ud -- 0 0 )  ok.
+    begin  ok.
+        #  ok.
+        2dup d0=  ok.
+    until  ok.
+;  ok.
+  ok.
+: #> ( ud -- addr len )  ok.
+    2drop hld @ BUF over -  ok.
+;  ok.
+  ok.
+: (d.) ( d -- addr len )  ok.
+    dup >r dabs <# #s r> sign #>  ok.
+;  ok.
+  ok.
+: ud. ( ud -- )  ok.
+    <# #s #> type space  ok.
+;  ok.
+  ok.
+: d. ( d -- )  ok.
+    (d.) type space  ok.
+;  ok.
+  ok.
+: . ( n -- )  ok.
+    s>d d.  ok.
+;  ok.
+  ok.
+: u. ( u -- )  ok.
+    0 d.  ok.
+;  ok.
+  ok.
+: rtype ( caddr u1 u2 -- ) \ display character string specified by caddr u1  ok.
+
+                           \ in a field u2 characters wide.  ok.
+  2dup u< if over - spaces else drop then  ok.
+  type  ok.
+;  ok.
+  ok.
+: d.r ( d length -- )  ok.
+    >r (d.)  ok.
+    r> rtype  ok.
+;  ok.
+  ok.
+: .r ( n length -- )  ok.
+    >r s>d r> d.r  ok.
+;  ok.
+  ok.
+: u.r ( u length -- )  ok.
+    0 swap d.r  ok.
+;  ok.
+  ok.
+( Memory operations                          JCB 18:02 05/31/15)  ok.
+  ok.
+: move ( addr1 addr2 u -- )  ok.
+    >r 2dup u< if  ok.
+        r> cmove>  ok.
+    else  ok.
+        r> cmove  ok.
+    then  ok.
+;  ok.
+  ok.
+: /mod ( n1 n2 -- n3 n4 ) >r s>d r> sm/rem ; 2 foldable  ok.
+: /    ( n1 n2 -- n3 )    /mod nip ; 2 foldable  ok.
+: mod  ( n1 n2 -- n3 )    /mod drop ; 2 foldable  ok.
+  ok.
+: ."  ok.
+    [char] " parse  ok.
+    state @ if  ok.
+        postpone sliteral  ok.
+        postpone type  ok.
+    else  ok.
+        type  ok.
+    then  ok.
+; immediate 0 foldable  ok.
+  ok.
+\ #######   CORE EXT   ########################################  ok.
+  ok.
+: pad ( -- addr )  ok.
+    here aligned  ok.
+;  ok.
+  ok.
+: within ( n1|u1 n2|u2 n3|u3 -- flag ) over - >r - r> u< ; 3 foldable  ok.
+  ok.
+: s"  ok.
+    [char] " parse  ok.
+    state @ if  ok.
+        postpone sliteral  ok.
+    then  ok.
+; immediate  ok.
+  ok.
+( CASE                                       JCB 09:15 07/18/14)  ok.
+\ From ANS specification A.3.2.3.2  ok.
+  ok.
+: case ( -- 0 ) 0 ; immediate  ( init count of ofs )  ok.
+  ok.
+: of  ( #of -- orig #of+1 / x -- )  ok.
+    1+    ( count ofs )  ok.
+    >r    ( move off the stack in case the control-flow )  ok.
+          ( stack is the data stack. )  ok.
+    postpone over  postpone = ( copy and test case value)  ok.
+    postpone if    ( add orig to control flow stack )  ok.
+    postpone drop  ( discards case value if = )  ok.
+    r>             ( we can bring count back now )  ok.
+; immediate  ok.
+  ok.
+: endof ( orig1 #of -- orig2 #of )  ok.
+    >r   ( move off the stack in case the control-flow )  ok.
+         ( stack is the data stack. )  ok.
+    postpone else  ok.
+    r>   ( we can bring count back now )  ok.
+; immediate  ok.
+  ok.
+: endcase  ( orig1..orign #of -- )  ok.
+    postpone drop  ( discard case value )  ok.
+    0 ?do  ok.
+      postpone then  ok.
+    loop  ok.
+; immediate  ok.
+  ok.
+\ #######   DICTIONARY   ######################################  ok.
+  ok.
+: cornerstone ( "name" -- )  ok.
+  create  ok.
+    forth 2@        \ preserve FORTH and DP after this  ok.
+    , 2 cells + ,  ok.
+  does>  ok.
+    2@ forth 2! \ restore FORTH and DP  ok.
+;  ok.
+  ok.
+\ -------------------------------------------------------------  ok.
+\  Double tools  ok.
+\ -------------------------------------------------------------  ok.
+  ok.
+: 2or  ( d1 d2 -- d ) >r swap >r or  r> r> or  ; 4 foldable  ok.
+: 2and ( d1 d2 -- d ) >r swap >r and r> r> and ; 4 foldable  ok.
+: 2xor ( d1 d2 -- d ) >r swap >r xor r> r> xor ; 4 foldable  ok.
+  ok.
+: d0<   ( d -- ? ) nip 0< ; 2 foldable  ok.
+  ok.
+: d= ( x0 x1 y0 y1 -- ? )  ok.
+  ok.
+  swap ( x0 x1 y1 y0 )  ok.
+  >r   ( x0 x1 y1 R: y0 )  ok.
+  =    ( x0 x1=y1 R: y0 )  ok.
+  swap ( x1=y1 x0 R: y0 )  ok.
+  r>   ( x1=y1 x0 y0 )  ok.
+  =    ( x1=y1 x0=y0 )  ok.
+  and  ok.
+; 4 foldable  ok.
+  ok.
+: d<> d= not ; 4 foldable  ok.
+  ok.
+: d2/  ( x1 x2 -- x1' x2' ) >r 1 rshift r@ 8 cells 1- lshift or r> 2/       ; 2 
+foldable  ok.
+: dshr ( x1 x2 -- x1' x2' ) >r 1 rshift r@ 8 cells 1- lshift or r> 1 rshift ; 2 
+foldable  ok.
+  ok.
+\ : 2lshift  ( ud u -- ud* ) begin dup while >r d2*  r> 1- repeat drop ; 3 folda
+ble  ok.
+\ : 2arshift (  d u --  d* ) begin dup while >r d2/  r> 1- repeat drop ; 3 folda
+ble  ok.
+\ : 2rshift  ( ud u -- ud* ) begin dup while >r dshr r> 1- repeat drop ; 3 folda
+ble  ok.
+  ok.
+: 2lshift ( low high u -- )  ok.
+  dup >r ( low high u R: u )  ok.
+  lshift ( low high* )  ok.
+  over 8 cells r@ - rshift or  ok.
+  over r@ 8 cells - lshift or  ok.
+  swap r> lshift swap  ok.
+; 3 foldable  ok.
+  ok.
+: 2rshift ( low high u -- )  ok.
+  >r swap ( high low R: u )  ok.
+  r@ rshift  ok.
+  over 8 cells r@ - lshift or  ok.
+  over r@ 8 cells - rshift or  ok.
+  swap  ok.
+  r> rshift  ok.
+; 3 foldable  ok.
+  ok.
+: 2arshift ( low high u -- )  ok.
+  dup >r 8 cells u< ( low high R: u )  ok.
+  if  ok.
+    swap ( high low R: u )  ok.
+    r@ rshift  ok.
+    over 8 cells r@ - lshift or  ok.
+  else  ok.
+    nip dup r@ 8 cells - arshift  ok.
+  then  ok.
+  swap r> arshift  ok.
+; 3 foldable  ok.
+  ok.
+: 2nip ( d1 d2 -- d2 )  ok.
+  >r nip nip r>  ok.
+; 4 foldable  ok.
+  ok.
+: 2rot ( d1 d2 d3 -- d2 d3 d1 )  ok.
+  >r >r ( d1 d2 R: d3 )  ok.
+  2swap ( d2 d1 R: d3 )  ok.
+  r> r> ( d2 d1 d3 )  ok.
+  2swap ( d2 d3 d1 )  ok.
+; 6 foldable  ok.
+  ok.
+: d<            \ ( al ah bl bh -- flag )  ok.
+    rot         \ al bl bh ah  ok.
+    2dup =  ok.
+    if  ok.
+        2drop u<  ok.
+    else  ok.
+        > nip nip  ok.
+    then  ok.
+; 4 foldable  ok.
+  ok.
+: d>  ( d1 d2 -- ? ) 2swap d< ; 4 foldable  ok.
+: d>= ( d1 d2 -- ? ) d< not   ; 4 foldable  ok.
+: d<= ( d1 d2 -- ? ) d> not   ; 4 foldable  ok.
+  ok.
+: dmin ( d1 d2 -- d ) 2over 2over d< if 2drop else 2nip then ; 4 foldable  ok.
+: dmax ( d1 d2 -- d ) 2over 2over d< if 2nip else 2drop then ; 4 foldable  ok.
+  ok.
+: du<           \ ( al ah bl bh -- flag )  ok.
+    rot         \ al bl bh ah  ok.
+    2dup =  ok.
+    if  ok.
+        2drop u<  ok.
+    else  ok.
+        u> nip nip  ok.
+    then  ok.
+; 4 foldable  ok.
+  ok.
+: du>  ( d1 d2 -- ? ) 2swap du< ; 4 foldable  ok.
+: du>= ( d1 d2 -- ? ) du< not   ; 4 foldable  ok.
+: du<= ( d1 d2 -- ? ) du> not   ; 4 foldable  ok.
+  ok.
+\ -------------------------------------------------------------  ok.
+\  Fixpoint output  ok.
+\ -------------------------------------------------------------  ok.
+  ok.
+: hold< ( c -- ) \ Add a character at the end of the number string  ok.
+  hld @   dup 1- dup hld !    BUF hld @ -  move  ok.
+  BUF 1- c!  ok.
+;  ok.
+  ok.
+: f# ( u -- u ) base @ um* .digit hold< ;  ok.
+  ok.
+: f.n ( f n -- ) ( f-Low f-High n -- ) \ Prints a s15.16 number  ok.
+  ok.
+  >r ( Low High R: n )  ok.
+  ok.
+  dup 0< if [char] - emit then  ok.
+  dabs  ok.
+  ( uLow uHigh )  ok.
+  0 <# #s   ( uLow 0 0 )  ok.
+  drop swap ( 0 uLow )  ok.
+  ok.
+  [char] , hold<  ok.
+  r> 0 ?do f# loop  ok.
+  ok.
+  #> type space  ok.
+;  ok.
+  ok.
+: f. ( f -- ) 8 cells f.n ;  ok.
+  ok.
+\ -------------------------------------------------------------  ok.
+\  Fixpoint calculations  ok.
+\ -------------------------------------------------------------  ok.
+  ok.
+: 2variable ( d -- ) create , , 0 foldable ;  ok.
+\ : 2constant ( d -- ) create , , 0 foldable does> 2@ ;  ok.
+: 2constant ( d -- ) swap : postpone literal postpone literal postpone ; 0 folda
+ble ;  ok.
+  ok.
+: s>f ( n -- f ) 0 swap ; 1 foldable  \ Signed integer --> Fixpoint s15.16  ok.
+\ : f>s ( f -- n ) nip    ; 2 foldable  \ Fixpoint s15.16 --> Signed integer  ok
+.
+  ok.
+: f* ( f1 f2 -- f )  ok.
+  ok.
+        dup >r dabs  ok.
+  2swap dup >r dabs  ok.
+  ok.
+            ( d c b a )  ok.
+  swap >r   ( d c a R: b )  ok.
+  2dup *    ( d c a ac R: b )  ok.
+  >r        ( d c a R: b ac )  ok.
+  >r        ( d c R: b ac a )  ok.
+  over      ( d c d R: b ac a )  ok.
+  r> um*    ( d c L H R: b ac )  ok.
+  r> +      ( d c L H' R: b )  ok.
+  rot       ( d L H' c R: b )  ok.
+  r@        ( d L H' c b R: b )  ok.
+  um* d+    ( d L' H'' R: b )  ok.
+  rot       ( L' H'' d R: b )  ok.
+  r>        ( L' H'' d b )  ok.
+  um* nip 0 ( L' H'' db 0 )  ok.
+  d+        ( L'' H''' )  ok.
+  ok.
+  r> r> xor 0< if dnegate then  ok.
+  ok.
+; 4 foldable  ok.
+  ok.
+0. 2variable dividend  ok.
+0. 2variable shift  ok.
+0. 2variable divisor  ok.
+  ok.
+: (ud/mod) ( -- )  ok.
+  ok.
+  16 cells  ok.
+  begin  ok.
+  ok.
+    \ Shift the long chain of four cells.  ok.
+  ok.
+       dividend cell+ @ dup 8 cells 1- rshift >r 2*    dividend cell+ !  ok.
+    r> dividend       @ dup 8 cells 1- rshift >r 2* or dividend       !  ok.
+    r>    shift cell+ @ dup 8 cells 1- rshift >r 2* or    shift cell+ !  ok.
+    r>    shift       @                          2* or    shift       !  ok.
+  ok.
+    \ Subtract divisor when shifted out value is large enough  ok.
+  ok.
+    shift 2@ divisor 2@  du>=  ok.
+  ok.
+    if \ Greater or Equal: Subtract !  ok.
+      shift 2@ divisor 2@ d- shift 2!  ok.
+      dividend cell+ @ 1+ dividend cell+ !  ok.
+    then  ok.
+  ok.
+    1- dup 0=  ok.
+  until  ok.
+  drop  ok.
+;  ok.
+  ok.
+: ud/mod ( ud1 ud2 -- ud-rem ud-div )  ok.
+  ok.
+     divisor 2!  ok.
+  0. shift 2!  ok.
+     dividend 2!  ok.
+  ok.
+  (ud/mod)  ok.
+  ok.
+  shift 2@  ok.
+  dividend 2@  ok.
+  ok.
+; 4 foldable  ok.
+  ok.
+: f/ ( f1 f2 -- f )  ok.
+  ok.
+  dup >r dabs  divisor 2!  ok.
+  dup >r dabs  0 Shift 2! 0 swap dividend 2!  ok.
+  ok.
+  (ud/mod)  ok.
+  ok.
+  dividend 2@  ok.
+  r> r> xor 0< if dnegate then  ok.
+  ok.
+; 4 foldable  ok.
+  ok.
+\ -------------------------------------------------------------  ok.
+\   Most positive and negative s15.16 values possible  ok.
+\ -------------------------------------------------------------  ok.
+  ok.
+$FFFF $7FFF 2constant +inf  \  32767,9999847412109375  ok.
+$0000 $8000 2constant -inf  \ -32768,0000000000000000  ok.
+  ok.
+\ -------------------------------------------------------------  ok.
+\  Sine and Cosine with Cordic algorithm  ok.
+\ -------------------------------------------------------------  ok.
+  ok.
+hex  ok.
+create numbertable  ok.
+C90F , 76B1 , 3EB6 , 1FD5 , 0FFA , 07FF , 03FF , 01FF , 00FF , 007F , 003F , 001
+F , 000F , 0007 , 0003 , 0001 ,  ok.
+decimal  ok.
+  ok.
+: e^ka ( u -- x ) 2* numbertable + @ ; 1 foldable  ok.
+  ok.
+\ ----------------------------------------------------------------------------- 
+ ok.
+\   Common building blocks for different CORDIC modes  ok.
+\ ----------------------------------------------------------------------------- 
+ ok.
+  ok.
+0. 2variable cordic-x  ok.
+0. 2variable cordic-y  ok.
+0. 2variable cordic-z  ok.
+  ok.
+: cordic-step-plus ( i -- ) >r  ok.
+    cordic-x 2@ cordic-y 2@ r@ 2arshift d+  ok.
+    cordic-y 2@ cordic-x 2@ r@ 2arshift d- cordic-y  2!  ok.
+    cordic-z 2@             r> e^ka 0   d+ cordic-z  2!  ok.
+                                           cordic-x  2!  ok.
+;  ok.
+  ok.
+: cordic-step-minus ( i -- ) >r  ok.
+    cordic-x 2@ cordic-y 2@ r@ 2arshift d-  ok.
+    cordic-y 2@ cordic-x 2@ r@ 2arshift d+ cordic-y  2!  ok.
+    cordic-z 2@             r> e^ka 0   d- cordic-z  2!  ok.
+                                           cordic-x  2!  ok.
+;  ok.
+  ok.
+\ ----------------------------------------------------------------------------- 
+ ok.
+\   Angle --> Sine and Cosine  ok.
+\ ----------------------------------------------------------------------------- 
+ ok.
+  ok.
+: cordic-sincos ( f-angle -- f-cosine f-sine )  ok.
+                ( Angle between -Pi/2 and +Pi/2 ! )  ok.
+  ok.
+  $0,9B74      cordic-x 2! \ Scaling value to cancel gain of the algorithm  ok.
+   0,0         cordic-y 2!  ok.
+               cordic-z 2!  ok.
+  ok.
+  0  ok.
+  begin  ok.
+    dup  ok.
+    cordic-z @ 0< \ 2@ d0<  ok.
+    if  ok.
+      cordic-step-plus  ok.
+    else  ok.
+      cordic-step-minus  ok.
+    then  ok.
+  ok.
+    1+ dup 16 =  ok.
+  until  ok.
+  drop  ok.
+;  ok.
+  ok.
+: (sin) ( f-angle -- f-sine )   cordic-sincos cordic-y 2@ ; 2 foldable  ok.
+: (cos) ( f-angle -- f-cosine ) cordic-sincos cordic-x 2@ ; 2 foldable  ok.
+  ok.
+3,14159   2constant pi  ok.
+pi 2,0 f/ 2constant pi/2  ok.
+pi 4,0 f/ (cos) f. \ Displays cos(Pi/4) 0,7070922851562500  ok.
+  ok.
+: cos ( f-angle -- f-cosine )  ok.
+  dabs  ok.
+  pi/2 ud/mod drop 3 and ( Quadrant f-angle )  ok.
+  ok.
+  case  ok.
+    0 of                 (cos)         endof  ok.
+    1 of dnegate pi/2 d+ (cos) dnegate endof  ok.
+    2 of                 (cos) dnegate endof  ok.
+    3 of dnegate pi/2 d+ (cos)         endof  ok.
+  endcase  ok.
+  ok.
+; 2 foldable  ok.
+  ok.
+: sin ( f-angle -- f-sine )  ok.
+  dup >r \ Save sign  ok.
+  dabs  ok.
+  pi/2 ud/mod drop 3 and ( Quadrant f-angle )  ok.
+  ok.
+  case  ok.
+    0 of                 (sin)          endof  ok.
+    1 of dnegate pi/2 d+ (sin)          endof  ok.
+    2 of                 (sin)  dnegate endof  ok.
+    3 of dnegate pi/2 d+ (sin)  dnegate endof  ok.
+  endcase  ok.
+  ok.
+  r> 0< if dnegate then  ok.
+; 2 foldable  ok.
+  ok.
+: cossin ( f-angle -- f-cosine f-sine )  ok.
+  dup >r \ Save sign  ok.
+  dabs  ok.
+  pi/2 ud/mod drop 3 and ( Quadrant f-angle )  ok.
+  ok.
+  case  ok.
+    0 of                 cordic-sincos cordic-x 2@         cordic-y 2@         e
+ndof  ok.
+    1 of dnegate pi/2 d+ cordic-sincos cordic-x 2@ dnegate cordic-y 2@         e
+ndof  ok.
+    2 of                 cordic-sincos cordic-x 2@ dnegate cordic-y 2@ dnegate e
+ndof  ok.
+    3 of dnegate pi/2 d+ cordic-sincos cordic-x 2@         cordic-y 2@ dnegate e
+ndof  ok.
+  endcase  ok.
+  ok.
+  r> 0< if dnegate then  ok.
+; 2 foldable  ok.
+  ok.
+\ ----------------------------------------------------------------------------- 
+ ok.
+\  Integer XY vector --> Polar coordinates  ok.
+\ ----------------------------------------------------------------------------- 
+ ok.
+  ok.
+: cordic-vectoring ( x y -- d-r f-angle )  ok.
+  ok.
+  \ The CORDIC algorithm on its own works fine with angles between -Pi/2 ... +Pi
+/2.  ok.
+  \ Need to handle angles beyond, which translates to if x < 0,  by an additiona
+l step:  ok.
+  ok.
+  over 0<  \ x < 0 ?  ok.
+  if  ok.
+    negate swap negate swap  ok.
+  ok.
+    dup 0< if \ Now y < 0 ?  ok.
+      pi         cordic-z 2!  ok.
+    else  ok.
+      pi dnegate cordic-z 2!  ok.
+    then  ok.
+  else  ok.
+    0,0  cordic-z 2!  ok.
+  then  ok.
+  ok.
+  \ Improve accuracy by exploiting 32 bit dynamic range during calculations  ok.
+
+  ok.
+  s>d 12 2lshift cordic-y 2!  ok.
+  s>d 12 2lshift cordic-x 2!  ok.
+  ok.
+  0  ok.
+  begin  ok.
+    dup  ok.
+    cordic-y @ 0< \ 2@ d0<  ok.
+    if  ok.
+      cordic-step-minus  ok.
+    else  ok.
+      cordic-step-plus  ok.
+    then  ok.
+  ok.
+    1+ dup 16 =  ok.
+  until  ok.
+  drop  ok.
+;  ok.
+  ok.
+: atan2     ( x y -- f-angle )             cordic-vectoring cordic-z 2@         
+    ; 2 foldable  ok.
+: xy>polar  ( x y -- f-angle d-magnitude ) atan2 cordic-x 2@ $0,9B74 f* 12 2arsh
+ift ; 2 foldable  ok.
+: magnitude ( x y -- d-magnitude )         xy>polar 2nip                        
+    ; 2 foldable  ok.
+  ok.
+\ -------------------------------------------------------------  ok.
+\  Square and root  ok.
+\ -------------------------------------------------------------  ok.
+  ok.
+: sqr ( f -- f^2 ) 2dup f* ; 2 foldable  ok.
+  ok.
+: sqrt ( f -- sqrt ) ( L H )  ok.
+  ok.
+  >r >r  ok.
+  ok.
+  0,0  ok.
+  ok.
+    2dup $0080 or      sqr   r> r@ over >r  du<= if $0080 or then  ok.
+    2dup $0040 or      sqr   r> r@ over >r  du<= if $0040 or then  ok.
+    2dup $0020 or      sqr   r> r@ over >r  du<= if $0020 or then  ok.
+    2dup $0010 or      sqr   r> r@ over >r  du<= if $0010 or then  ok.
+  ok.
+    2dup $0008 or      sqr   r> r@ over >r  du<= if $0008 or then  ok.
+    2dup $0004 or      sqr   r> r@ over >r  du<= if $0004 or then  ok.
+    2dup $0002 or      sqr   r> r@ over >r  du<= if $0002 or then  ok.
+    2dup $0001 or      sqr   r> r@ over >r  du<= if $0001 or then  ok.
+  ok.
+    over $8000 or over sqr   r> r@ over >r  du<= if swap $8000 or swap then  ok.
+
+    over $4000 or over sqr   r> r@ over >r  du<= if swap $4000 or swap then  ok.
+
+    over $2000 or over sqr   r> r@ over >r  du<= if swap $2000 or swap then  ok.
+
+    over $1000 or over sqr   r> r@ over >r  du<= if swap $1000 or swap then  ok.
+
+  ok.
+    over $0800 or over sqr   r> r@ over >r  du<= if swap $0800 or swap then  ok.
+
+    over $0400 or over sqr   r> r@ over >r  du<= if swap $0400 or swap then  ok.
+
+    over $0200 or over sqr   r> r@ over >r  du<= if swap $0200 or swap then  ok.
+
+    over $0100 or over sqr   r> r@ over >r  du<= if swap $0100 or swap then  ok.
+
+  ok.
+  rdrop rdrop  ok.
+; 2 foldable  ok.
+  ok.
+\ -------------------------------------------------------------  ok.
+\  Exponential function  ok.
+\ -------------------------------------------------------------  ok.
+  ok.
+\ s31.32 comma parts of all but first coefficient in Horner expansion of  ok.
+\ a partial sum of the series expansion of exp(x).  The whole parts are 0  ok.
+\ and are supplied in code.  ok.
+  ok.
+create exp-coef  ok.
+  ok.
+$1745 , \  1/11  ok.
+$1999 , \  1/10  ok.
+$1C71 , \  1/9  ok.
+$2000 , \  1/8  ok.
+$24AD , \  1/7  ok.
+$2AAA , \  1/6  ok.
+$3333 , \  1/5  ok.
+$4000 , \  1/4  ok.
+$5555 , \  1/3  ok.
+$8000 , \  1/2  ok.
+  ok.
+: exp-1to1 ( x -- expx )  ok.
+  \ Calculate exp(x) for x an s31.32 value.  Values are correct when  ok.
+  \ when rounded to six decimal places when x is between +/-0.7.  Uses an  ok.
+  \ 11-term partial sum evaluated using Horner's method.  ok.
+  \ Calculate Horner terms  ok.
+  1,0   \ Starting Horner term is 1  ok.
+  10 0 do  ok.
+    \ Multiply last term by x and coefficient, then add to get new term  ok.
+    2over f* i   2* exp-coef + @     0 f* 0 1 d+  ok.
+  loop  ok.
+  \ Last part of expansion  ok.
+  2over f* 0 1 d+  ok.
+  2nip  ok.
+; 2 foldable  ok.
+  ok.
+$B172 $0000 2constant lnof2 \      0,6931457519531250  ok.
+  ok.
+\ Return the floor of an s15.16 value df  ok.
+: floor ( df -- df ) nip 0 swap ; 2 foldable  ok.
+  ok.
+: pow2 ( x -- 2^x )  ok.
+  \ Return 2 raised to the power x where x is s15.16  ok.
+  \ If x is 0, return 1  ok.
+  2dup 0,0 d= if 2drop 1,0 exit then  ok.
+  \ If x < -16, 0 is returned.  If x >= 15, returns s15.16 ceiling  ok.
+  2dup -16,0 d< if 2drop 0,0 exit then  ok.
+  2dup 15,0 d< not if 2drop +inf exit then  ok.
+  \ Get largest integer n such that n <= x so x = z + n, 0 <= z < 1  ok.
+  2dup floor 2swap 2over d-  ok.
+  ( n z )  ok.
+  \ Get exp(z*ln2) = 2^z, then shift n times to get 2^x = (2^n)*(2^z)  ok.
+  lnof2 f* exp-1to1 2swap nip  ok.
+  ( 2^z n )  \ n now a single  ok.
+  dup 0= if  ok.
+    drop  ok.
+  else  ok.
+    dup 0< if  ok.
+      negate 2rshift  ok.
+    else  ok.
+      2lshift  ok.
+    then  ok.
+  then  ok.
+; 2 foldable  ok.
+  ok.
+$7154 $0001 2constant 1overlnof2  ok.
+  ok.
+: exp ( f -- exp ) \ exp(x) = pow2(x/ln(2))  ok.
+  1overlnof2 f* pow2  ok.
+; 2 foldable  ok.
+  ok.
+\ -------------------------------------------------------------------------  ok.
+
+\  Helper for logarithmic functions  ok.
+\ -------------------------------------------------------------------------  ok.
+
+  ok.
+: log2-1to2 ( y -- log2y )  ok.
+  \ Helper function that requires y is s31.32 value with 1 <= y < 2  ok.
+  0 0 2swap 0  ok.
+  ( retval y cum_m )  ok.
+  \ while((cum_m < 33) && (y > 1))  ok.
+  begin dup 2over  ok.
+    ( retval y cum_m cum_m y )  ok.
+    1,0 d> swap 33 < and while  ok.
+    ( retval y cum_m )  ok.
+    rot rot 0 -rot        \ m = 0, z = y  ok.
+    ( retval cum_m m z)  ok.
+    \ Do z = z*z, m = m+1 until 2 <= z.  We also get z < 4  ok.
+    begin  ok.
+      2dup f* rot 1 + -rot  ok.
+      ( retval cum_m m z )  ok.
+      2dup 2,0 d< not  ok.
+    until  ok.
+    \ At this point z = y^(2^m) so that log2(y) = (2^(-m))*log2(z)  ok.
+    \ = (2^(-m))*(1 + log2(z/2)) and 1 <= z/2 < 2  ok.
+    \ We will add m to cum_m and add 2*(-cum_m) to the returned value,  ok.
+    \ then iterate with a new y = z/2  ok.
+    ( retval cum_m m z )  ok.
+    2swap + -rot dshr >r >r   \ cum_m = cum_m + m, y = z/2  ok.
+    ( retval cum_m ) ( R: y=z/2 )  ok.
+    \ retval = retval + 2^-cum_m  ok.
+    dup 1,0 rot 0 do dshr loop  ok.
+    ( retval cum_m 2^-cum_m )  ok.
+    rot >r d+  ok.
+    ( retval ) ( R: y cum_m )  ok.
+    r> r> r> rot  ok.
+    ( retval y cum_m )  ok.
+  repeat  ok.
+  drop 2drop  ok.
+  ok.
+; 2 foldable  ok.
+  ok.
+\ -------------------------------------------------------------------------  ok.
+
+\  Logarithmic functions  ok.
+\ -------------------------------------------------------------------------  ok.
+
+  ok.
+: log2 ( x -- log2x )  ok.
+  \ Calculates base 2 logarithm of positive s15.16 value x  ok.
+  ok.
+  \ Treat error and special cases  ok.
+  \ Check that x > 0.  If not, return "minus infinity"  ok.
+  2dup 0,0 d> not if 2drop -inf exit then  ok.
+  \ If x = 1, return 0  ok.
+  2dup 1,0 d= if 2drop 0,0 exit then  ok.
+  ok.
+  \ Find the n such that 1 <= (2^(-n))*x < 2  ok.
+  \ This n is the integer part (characteristic) of log2(x)  ok.
+  0 -rot  ok.
+  ( n=0 y=x )  ok.
+  2dup 1,0 d> if  ok.
+    \ Do n = n+1, y = y/2 while (y >= 2)  ok.
+    begin 2dup 2,0 d< not while  ok.
+      ( n y )  ok.
+      dshr rot 1 + -rot  ok.
+    repeat  ok.
+  else  ok.
+    \ Do n = n-1, y = 2*y while (y < 1)  ok.
+    begin 2dup 1,0 d< while  ok.
+      ( n y )  ok.
+      d2* rot 1 - -rot  ok.
+    repeat  ok.
+  then  ok.
+  ok.
+  \ Now y = (2^(-n))*x so log2(x) = n + log2(y) and we use the  ok.
+  \ helper function to get log2(y) since 1 <= y < 2  ok.
+  log2-1to2 rot 0 swap d+  ok.
+  ( log2x )  ok.
+; 2 foldable  ok.
+  ok.
+  ok.
+: ln ( x -- lnx )  ok.
+  \ Return the natural logarithm of a postive s15.16 value x  ok.
+  log2 lnof2 f*  ok.
+; 2 foldable  ok.
+  ok.
+\ #######   MEMORY   ##########################################  ok.
+  ok.
+: unused ( -- u ) $3000 here - ; \ 12 kb  ok.
+  ok.
+\ #######   IO   ##############################################  ok.
+  ok.
+: cycles ( -- u ) $8000 io@ ;  ok.
+  ok.
+   24 constant cycles/us  \ For 24 MHz  ok.
+24000 constant cycles/ms  ok.
+  ok.
+: delay-cycles ( cycles -- )  ok.
+  cycles ( cycles start )  ok.
+  begin  ok.
+    pause  ok.
+    2dup ( cycles start cycles start )  ok.
+    cycles ( cycles start cycles start current )  ok.
+    swap - ( cycles start cycles elapsed )  ok.
+    u<=  ok.
+  until  ok.
+  2drop  ok.
+;  ok.
+  ok.
+: us ( u -- )       cycles/us *  delay-cycles      ;  ok.
+: ms ( u -- ) 0 ?do cycles/ms    delay-cycles loop ;  ok.
+  ok.
+: randombit ( -- 0 | 1 ) $2000 io@ 2 rshift 1 and ;  ok.
+: random ( -- x ) 0  16 0 do 2* randombit or 100 0 do loop loop ;  ok.
+  ok.
+: ticks ( -- u ) $4000 io@ ;  ok.
+  ok.
+: nextirq ( cycles -- ) \ Trigger the next interrupt u cycles after the last one
+.  ok.
+  $4000 io@  \ Read current tick  ok.
+  -           \ Subtract the cycles already elapsed  ok.
+  8 -          \ Correction for the cycles neccessary to do this  ok.
+  invert        \ Timer counts up to zero to trigger the interrupt  ok.
+  $4000 io!      \ Prepare timer for the next irq  ok.
+;  ok.
+  ok.
+: sram@ ( addr -- x ) $0800 io! $0810 io@ ;  ok.
+: sram! ( x addr -- ) $0800 io! $0810 io! ;  ok.
+  ok.
+: esc? ( -- ? ) key? if key 27 = else false then ;  ok.
+  ok.
+\ ----------------------------------------------------------------------------- 
+ ok.
+\ 320x240 LCD Display ILI9341  ok.
+\ ----------------------------------------------------------------------------- 
+ ok.
+  ok.
+\ Registers:  ok.
+  ok.
+  $0890 constant lcd-ctrl  \ LCD control lines  ok.
+  $08A0 constant lcd-data  \ LCD data, writeonly. Set $100 for commands.  ok.
+  ok.
+\ ----------------------------------------------------------------------------- 
+ ok.
+  ok.
+: cmd>lcd ( c -- ) $100 or lcd-data io! ; \ Logic handles the command/data line 
+ ok.
+:    >lcd ( c -- ) $FF and lcd-data io! ;  \ and pulses write line.  ok.
+  ok.
+\ ----------------------------------------------------------------------------- 
+ ok.
+  ok.
+: lcd-init-graphics ( -- )  ok.
+  ok.
+  ." Trying to get access to LCD... Press ESC to exit." cr  ok.
+  ok.
+  begin  ok.
+    esc? if welcome quit then  ok.
+    lcd-ctrl io@ 4 ( LCD_MODE ) and  ok.
+  until  ok.
+  ok.
+  1 ( LCD_CS_N )                    lcd-ctrl io!  ok.
+  1 ms  ok.
+  1 ( LCD_CS_N ) 2 ( LCD_RST_N ) or lcd-ctrl io!  ok.
+  120 ms  ok.
+                 2 ( LCD_RST_N )    lcd-ctrl io!  ok.
+  ok.
+  \ Initialisation sequence  ok.
+  ok.
+  $CF ( ILI9341_POWERB    ) cmd>lcd $00 >lcd $C1 >lcd $30 >lcd  ok.
+  $ED ( ILI9341_POWER_SEQ ) cmd>lcd $64 >lcd $03 >lcd $12 >lcd $81 >lcd  ok.
+  $E8 ( ILI9341_DTCA      ) cmd>lcd $85 >lcd $00 >lcd $78 >lcd  ok.
+  $CB ( ILI9341_POWERA    ) cmd>lcd $39 >lcd $2C >lcd $00 >lcd $34 >lcd $02 >lcd
+  ok.
+  $F7 ( ILI9341_PRC       ) cmd>lcd $20 >lcd  ok.
+  $EA ( ILI9341_DTCB      ) cmd>lcd $00 >lcd $00 >lcd  ok.
+  $C0 ( ILI9341_LCMCTRL   ) cmd>lcd $23 >lcd  ok.
+  $C1 ( ILI9341_POWER2    ) cmd>lcd $10 >lcd  ok.
+  $C5 ( ILI9341_VCOM1     ) cmd>lcd $3e >lcd $28 >lcd  ok.
+  $C7 ( ILI9341_VCOM2     ) cmd>lcd $86 >lcd  ok.
+  $36 ( ILI9341_MADCTL    ) cmd>lcd $08 >lcd  ok.
+  $3A ( ILI9341_COLMOD    ) cmd>lcd $55 >lcd  ok.
+  $B1 ( ILI9341_FRMCTR1   ) cmd>lcd $00 >lcd $18 >lcd  ok.
+  $B6 ( ILI9341_DFC       ) cmd>lcd $08 >lcd $82 >lcd $27 >lcd  ok.
+  $F2 ( ILI9341_3GAMMA_EN ) cmd>lcd $00 >lcd  ok.
+  $26 ( ILI9341_GAMSET    ) cmd>lcd $01 >lcd  ok.
+  ok.
+  $E0 ( ILI9341_PVGAMCTRL ) cmd>lcd $0F >lcd $31 >lcd $2B >lcd $0C >lcd $0E >lcd
+  ok.
+                                    $08 >lcd $4E >lcd $F1 >lcd $37 >lcd $07 >lcd
+  ok.
+                                    $10 >lcd $03 >lcd $0E >lcd $09 >lcd $00 >lcd
+  ok.
+  $E1 ( ILI9341_NVGAMCTRL ) cmd>lcd $00 >lcd $0E >lcd $14 >lcd $03 >lcd $11 >lcd
+  ok.
+                                    $07 >lcd $31 >lcd $C1 >lcd $48 >lcd $08 >lcd
+  ok.
+                                    $0F >lcd $0C >lcd $31 >lcd $36 >lcd $0F >lcd
+  ok.
+  ok.
+  $F6 ( ILI9341_INTERFACE ) cmd>lcd $00 >lcd $40 >lcd $00 >lcd  ok.
+  ok.
+  $11 ( ILI9341_SLPOUT    ) cmd>lcd  ok.
+  $29 ( ILI9341_DISPON    ) cmd>lcd  ok.
+    ok.
+  $35 ( ILI9341_TEON      ) cmd>lcd $00 >lcd  ok.
+;  ok.
+  ok.
+: draw-rect ( color x1 x2 y1 y2 -- )  ok.
+  dup  ok.
+  $970 io!  ok.
+  over - 1+ >r  ok.
+  $950 io!  ok.
+  dup  ok.
+  $980 io!  ok.
+  over - 1+ r> um*  ok.
+  $990 io!  ok.
+  $9A0 io!  ok.
+  $960 io!  ok.
+  $940 io!  ok.
+;  ok.
+  ok.
+  ok.
+: draw-line ( color x1 x2 y1 y2 -- )  ok.
+  $970 io!  ok.
+  $950 io!  ok.
+  $980 io!  ok.
+  $960 io!  ok.
+  $9B0 io!  ok.
+;  ok.
+  ok.
+: cls  ok.
+0 0 319 0 239 draw-rect  ok.
+;  ok.
+  ok.
+: setpixel ( x y -- )  ok.
+$2A cmd>lcd dup 8 rshift dup >lcd over >lcd >lcd >lcd  ok.
+$2B cmd>lcd dup 8 rshift dup >lcd over >lcd >lcd >lcd  ok.
+$2C cmd>lcd $FF >lcd $FF >lcd  ok.
+;  ok.
+  ok.
+' lcd-init-graphics init !  ok.
+  ok.
+: sinplot  ok.
+  ok.
+319 0 do i i s>f 29,0 f/ sin 100,0 f* 100,0 d+ nip setpixel loop ;  ok.
+  ok.
+  ok.
+  ok.
+pi 2,0 f* 2constant 2pi  ok.
+  ok.
+create sintab 40 allot  ok.
+  ok.
+create costab 40 allot  ok.
+  ok.
+  ok.
+  ok.
+: poly ( color n -- )  ok.
+  ok.
+dup  ok.
+  ok.
+>r  ok.
+  ok.
+2pi r@ s>f f/  ok.
+  ok.
+0,0  ok.
+  ok.
+r> 0 do     ok.
+  ok.
+   2dup sin 100,0 f* 160,0 d+ nip i 2* sintab + !  ok.
+  ok.
+   2dup cos 100,0 f* 120,0 d+ nip i 2* costab + !  ok.
+  ok.
+   2over d+   ok.
+  ok.
+loop  ok.
+  ok.
+2drop  ok.
+  ok.
+2drop  ok.
+  ok.
+dup 1- 0 do   ok.
+  ok.
+   dup i 1+ do  ok.
+  ok.
+     over  ok.
+  ok.
+     j 2* sintab + @  ok.
+  ok.
+     i 2* sintab + @  ok.
+  ok.
+     j 2* costab + @  ok.
+  ok.
+     i 2* costab + @  ok.
+  ok.
+     draw-line  ok.
+  ok.
+     200 us  ok.
+  ok.
+   loop  ok.
+  ok.
+loop  ok.
+  ok.
+drop  ok.
+  ok.
+drop  ok.
+  ok.
+;  ok.
+  ok.
+320,0 2constant width  ok.
+  ok.
+240,0 2constant height  ok.
+  ok.
+  ok.
+  ok.
+0,0 2variable sx  ok.
+  ok.
+0,0 2variable cx  ok.
+  ok.
+0,0 2variable sy  ok.
+  ok.
+0,0 2variable cy  ok.
+  ok.
+  ok.
+  ok.
+: window ( rx lx ty by -- )  ok.
+  ok.
+ 2over 2over d- height 2swap f/ sy 2!  ok.
+  ok.
+ 0. 2swap d- sy 2@ f* cy 2! 2drop  ok.
+  ok.
+ 2over 2over d- width  2swap f/ sx 2!  ok.
+  ok.
+ 0. 2swap d- sx 2@ f* cx 2! 2drop  ok.
+  ok.
+;  ok.
+  ok.
+  ok.
+  ok.
+: pset ( x y -- )  ok.
+  ok.
+ sy 2@ f* cy 2@ d+ nip >r  ok.
+  ok.
+ sx 2@ f* cx 2@ d+ nip r>  ok.
+  ok.
+ setpixel  ok.
+  ok.
+;  ok.
+  ok.
+  ok.
+  ok.
+0,0 2variable a  ok.
+  ok.
+0,0 2variable b  ok.
+  ok.
+0,0 2variable c  ok.
+  ok.
+  ok.
+  ok.
+: w ( x -- w )  ok.
+  ok.
+ 2dup  ok.
+  ok.
+ 2dup  ok.
+  ok.
+ f*  ok.
+  ok.
+ 2dup  ok.
+  ok.
+ c 2@ f*  ok.
+  ok.
+ 2swap  ok.
+  ok.
+ 1,0  ok.
+  ok.
+ d+  ok.
+  ok.
+ f/  ok.
+  ok.
+ 2swap  ok.
+  ok.
+ a 2@ f*  ok.
+  ok.
+ d+  ok.
+  ok.
+;  ok.
+  ok.
+  ok.
+  ok.
+: mira ( x y -- )  ok.
+  ok.
+ 2over w  ok.
+  ok.
+ ( x y w )  ok.
+  ok.
+ >r >r  ok.
+  ok.
+  ok.
+  ok.
+ ( x y, w on rstack )  ok.
+  ok.
+ begin  ok.
+  ok.
+ ( x y )  ok.
+  ok.
+ 2over 2over pset  ok.
+  ok.
+ ( x y )  ok.
+  ok.
+ r> r>  ok.
+  ok.
+ ( x y w )  ok.
+  ok.
+ 2swap  ok.
+  ok.
+ ( x w y )  ok.
+  ok.
+ b 2@ f*  ok.
+  ok.
+ ( x w y*b )  ok.
+  ok.
+ d+  ok.
+  ok.
+ ( x x1 )  ok.
+  ok.
+ 2dup  ok.
+  ok.
+ ( x x1 x1 )  ok.
+  ok.
+ w  ok.
+  ok.
+ ( x x1 w1)  ok.
+  ok.
+ 2dup  ok.
+  ok.
+ ( x x1 w1 w1)  ok.
+  ok.
+ >r >r  ok.
+  ok.
+ ( x x1 w1)  ok.
+  ok.
+ >r >r  ok.
+  ok.
+ ( x x1 )  ok.
+  ok.
+ 2swap  ok.
+  ok.
+ ( x1 x )  ok.
+  ok.
+ r> r>  ok.
+  ok.
+ ( x1 x w1)  ok.
+  ok.
+ 2swap  ok.
+  ok.
+ ( x1 w1 x)  ok.
+  ok.
+ d-  ok.
+  ok.
+ ( x1 w1-x)  ok.
+  ok.
+ esc?  ok.
+  ok.
+ until  ok.
+  ok.
+ r> r>  ok.
+  ok.
+ 2drop  ok.
+  ok.
+ 2drop  ok.
+  ok.
+ 2drop  ok.
+  ok.
+;  ok.
+  ok.
+  ok.
+  ok.
+  ok.
+  ok.
+  ok.
+  ok.
+: demo1  ok.
+  ok.
+cls  ok.
+  ok.
+( rx: 12.0, lx: -9.0, ty: 6.5, by: -10.5 )  ok.
+  ok.
+12,0 -9,0 6,5 -10,5 window  ok.
+  ok.
+( a: -0.48 )  ok.
+  ok.
+-0,48 a 2!  ok.
+  ok.
+( b: 0.94 )  ok.
+  ok.
+0,94 b 2!  ok.
+  ok.
+( c: 2.0 - 2.0 * a )  ok.
+  ok.
+2,0 2,0 a 2@ f* d- c 2!  ok.
+  ok.
+( 4.0 0.0 mira )  ok.
+  ok.
+4,0 0,0 mira  ok.
+  ok.
+;  ok.
+  ok.
+  ok.
+  ok.
+: demo2  ok.
+  ok.
+cls  ok.
+  ok.
+( rx: 12.0, lx: -9.0, ty: 10.5, by: -10.5 )  ok.
+  ok.
+12,0 -9,0 10,5 -10,5 window  ok.
+  ok.
+( a: -0.4 )  ok.
+  ok.
+-0,4 a 2!  ok.
+  ok.
+( b: 0.99 )  ok.
+  ok.
+0,99 b 2!  ok.
+  ok.
+( c: 2.0 - 2.0 * a )  ok.
+  ok.
+2,0 2,0 a 2@ f* d- c 2!  ok.
+  ok.
+( 4.0 0.0 mira )  ok.
+  ok.
+4,0 0,0 mira  ok.
+  ok.
+;  ok.
+  ok.
+  ok.
+  ok.
+: demo3  ok.
+  ok.
+cls  ok.
+  ok.
+( rx: 20.0, lx: -20.0, ty: 15.0, by: -15.0 )  ok.
+  ok.
+20,0 -20,0 15,0 -15,0 window  ok.
+  ok.
+( a: 0.7 )  ok.
+  ok.
+0,7 a 2!  ok.
+  ok.
+( b: 0.9998 )  ok.
+  ok.
+0,9998 b 2!  ok.
+  ok.
+( c: 2.0 - 2.0 * a )  ok.
+  ok.
+2,0 2,0 a 2@ f* d- c 2!  ok.
+  ok.
+( 0.0 12.0 mira )  ok.
+  ok.
+0,0 12,0 mira  ok.
+  ok.
+;  ok.
+  ok.
+  ok.
+  ok.
+: demo4  ok.
+  ok.
+cls  ok.
+  ok.
+( rx: 100.0, lx: -100.0, ty: 100.0, by: -100.0 )  ok.
+  ok.
+40,0 -40,0 40,0 -40,0 window  ok.
+  ok.
+( a: 0.31 )  ok.
+  ok.
+0,31 a 2!  ok.
+  ok.
+( b: 1.0 )  ok.
+  ok.
+1,0 b 2!  ok.
+  ok.
+( c: 2.0 - 2.0 * a )  ok.
+  ok.
+2,0 2,0 a 2@ f* d- c 2!  ok.
+  ok.
+( 0.0 12.0 mira )  ok.
+  ok.
+12,0 0,0 mira  ok.
+  ok.
+;  ok.
+  ok.
+create sintab  ok.
+    0 , 3 , 6 , 9 , 12 , 15 , 18 , 21 , 24 , 28 , 31 , 34 , 37 , 40 , 43 ,  ok.
+    46 , 48 , 51 , 54 , 57 , 60 , 63 , 65 , 68 , 71 , 73 , 76 , 78 , 81 ,  ok.
+    83 , 85 , 88 , 90 , 92 , 94 , 96 , 98 , 100 , 102 , 104 , 106 , 108 ,  ok.
+    109 , 111 , 112 , 114 , 115 , 116 , 118 , 119 , 120 , 121 , 122 ,  ok.
+    123 , 124 , 124 , 125 , 126 , 126 , 127 , 127 , 127 , 127 , 127 ,  ok.
+    127 , 127 , 127 , 127 , 127 , 127 , 126 , 126 , 125 , 124 , 124 , 123  ok.
+        , 122 , 121 , 120 , 119 , 118 , 117 , 115 , 114 , 112 , 111 , 109 ,  ok.
+
+    108 , 106 , 104 , 102 , 100 , 99 , 97 , 94 , 92 , 90 , 88 , 86 , 83 ,  ok.
+    81 , 78 , 76 , 73 , 71 , 68 , 65 , 63 , 60 , 57 , 54 , 52 , 49 , 46 ,  ok.
+    43 , 40 , 37 , 34 , 31 , 28 , 25 , 22 , 18 , 15 , 12 , 9 , 6 , 3 ,  ok.
+    0 , -2 , -6 , -9 , -12 , -15 , -18 , -21 , -24 , -27 , -30 , -33 ,  ok.
+    -36 , -39 , -42 , -45 , -48 , -51 , -54 , -57 , -60 , -62 , -65 ,  ok.
+    -68 , -70 , -73 , -76 , -78 , -81 , -83 , -85 , -88 , -90 , -92 ,  ok.
+    -94 , -96 , -98 , -100 , -102 , -104 , -106 , -107 , -109 , -111 ,  ok.
+    -112 , -114 , -115 , -116 , -118 , -119 , -120 , -121 , -122 , -123 ,  ok.
+    -124 , -124 , -125 , -126 , -126 , -127 , -127 , -127 , -127 , -127 ,  ok.
+    -127 , -127 , -127 , -127 , -127 , -127 , -126 , -126 , -125 , -124 ,  ok.
+    -124 , -123 , -122 , -121 , -120 , -119 , -118 , -117 , -115 , -114 ,  ok.
+    -113 , -111 , -109 , -108 , -106 , -104 , -103 , -101 , -99 , -97 ,  ok.
+    -95 , -92 , -90 , -88 , -86 , -83 , -81 , -79 , -76 , -74 , -71 ,  ok.
+    -68 , -66 , -63 , -60 , -57 , -55 , -52 , -49 , -46 , -43 , -40 ,  ok.
+    -37 , -34 , -31 , -28 , -25 , -22 , -19 , -16 , -12 , -9 , -6 , -3 ,  ok.
+   ok.
+0 variable t   ok.
+: color-index ( j i -- color-index )  ok.
+  t @ + $ff and 2* sintab + @ 256 + swap 128 + t @ $ff and 2* sintab + @ + $ff a
+nd 2* sintab + @ + 2/  ok.
+;  ok.
+  ok.
+: color ( color-index factor -- color )  ok.
+  * t @ + $ff and 2* sintab + @ 128 +  ok.
+;  ok.
+  ok.
+: my-draw-rect ( color x y )  ok.
+  3 lshift  ok.
+  >r  ok.
+  3 lshift  ok.
+  dup  ok.
+  7 +  ok.
+  r>  ok.
+  dup  ok.
+  7 +  ok.
+  draw-rect  ok.
+;  ok.
+  ok.
+: draw-part ( j i -- )  ok.
+  over over  ok.
+  color-index  ok.
+  >r  ok.
+  r@ 1 color  ok.
+  3 rshift 11 lshift  ok.
+  r@ 7 color  ok.
+  2 rshift 5 lshift  ok.
+  r> 2 color  ok.
+  $1f and  ok.
+  or or  ok.
+  -rot  ok.
+  my-draw-rect  ok.
+;  ok.
+  ok.
+: plasma  ok.
+  30 0 do  ok.
+    40 0 do  ok.
+    i     j draw-part  ok.
+ i 1 + j draw-part  ok.
+ i 2 + j draw-part  ok.
+ i 3 + j draw-part  ok.
+    4 +loop  ok.
+  loop  ok.
+;  ok.
+  ok.
+: plasma1  ok.
+  begin  ok.
+ begin $0890 io@ 4 and until  ok.
+    plasma  ok.
+    t @ 1 + t !  ok.
+  esc? until  ok.
+;  ok.
+( loading forth images and SRAM data through FPGA bindings )  ok.
+  ok.
+( fid is LSB of $DABBAD00 )  ok.
+  ok.
+( download forth core and image and bindings )  ok.
+  ok.
+( examples )  ok.
+  ok.
+( on PC: fpga.py forth.bin 0xdabbad00:soko-image.bin  0xdabbad01:soko-maps.bin 0
+xdabbad02:snake-image.bin )  ok.
+  ok.
+( 2 load-forth )  ok.
+  ok.
+( inside sokoace code, to load levels )  ok.
+  ok.
+( 1 load-sram )  ok.
+  ok.
+  ok.
+  ok.
+: fid! ( fid -- ) $900 io! ;  ok.
+  ok.
+: load-sram ( fid -- ) fid! 1 $910 io! ;  ok.
+  ok.
+: load-forth ( fid -- ) fid! 1 $920 io! ;  ok.
+  ok.
+( play sounds through SPI using ESP32 soundserver )  ok.
+  ok.
+  ok.
+  ok.
+: sound! ( sid -- ) $930 io! ;  ok.
+  ok.
+
