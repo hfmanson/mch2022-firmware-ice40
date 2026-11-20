@@ -141,6 +141,7 @@ module top (
 	wire [ 6:0] mt_mi_len,    bl_mi_len;
 	wire        mt_mi_rw,     bl_mi_rw;
 	wire        mt_mi_valid,  bl_mi_valid;
+	wire [31:0] mt_mi_wdata, bl_mi_wdata;
 	wire [ 7:0] wb_lcd_data,  bl_lcd_data;
 	wire        wb_lcd_rs,    bl_lcd_rs;
 	wire        wb_lcd_valid, bl_lcd_valid;
@@ -148,6 +149,7 @@ module top (
 	assign mi_len        = blit_active ? bl_mi_len    : mt_mi_len;
 	assign mi_rw         = blit_active ? bl_mi_rw     : mt_mi_rw;
 	assign mi_valid      = blit_active ? bl_mi_valid  : mt_mi_valid;
+	assign mi_wdata      = blit_active ? bl_mi_wdata  : mt_mi_wdata;
 	assign lcd_phy_data  = blit_active ? bl_lcd_data  : wb_lcd_data;
 	assign lcd_phy_rs    = blit_active ? bl_lcd_rs    : wb_lcd_rs;
 	assign lcd_phy_valid = blit_active ? bl_lcd_valid : wb_lcd_valid;
@@ -315,7 +317,7 @@ module top (
 		.mi_rw    (mt_mi_rw),
 		.mi_valid (mt_mi_valid),
 		.mi_ready (mi_ready & ~blit_active),
-		.mi_wdata (mi_wdata),
+		.mi_wdata (mt_mi_wdata),
 		.mi_wack  (mi_wack),
 		.mi_rdata (mi_rdata),
 		.mi_rstb  (mi_rstb & ~blit_active),
@@ -398,14 +400,14 @@ module top (
 
 	// PSRAM Blitter [7]
 	// -------------
-`define BLITTER	
-`ifdef BLITTER
 	psram_blitter psram_blitter_I (
 		.mi_addr       (bl_mi_addr),
 		.mi_len        (bl_mi_len),
 		.mi_rw         (bl_mi_rw),
 		.mi_valid      (bl_mi_valid),
 		.mi_ready      (mi_ready),
+		.mi_wdata      (bl_mi_wdata),
+		.mi_wack       (mi_wack),
 		.mi_rdata      (mi_rdata),
 		.mi_rstb       (mi_rstb),
 		.phy_data      (bl_lcd_data),
@@ -422,7 +424,6 @@ module top (
 		.clk           (clk_1x),
 		.rst           (rst)
 	);
-`endif
 
 	// SPI interface
 	// -------------
