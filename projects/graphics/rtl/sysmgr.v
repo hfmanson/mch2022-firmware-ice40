@@ -42,7 +42,7 @@ module sysmgr (
 	SB_PLL40_2F_PAD #(
 		.FEEDBACK_PATH       ("SIMPLE"),
 		.DIVR                (4'b0000),
-		.DIVF                (7'b1001111),
+		.DIVF                (7'b0111111),  // 63 -> 96 MHz clk_4x, 24 MHz clk_1x
 		.DIVQ                (3'b011),
 		.FILTER_RANGE        (3'b001),
 		.PLLOUT_SELECT_PORTA ("GENCLK"),
