@@ -20,6 +20,7 @@
 #include "msg.h"
 #include "qpi.h"
 #include "mira.h"
+#include "setpixel.h"
 
 // ---------------------------------------------------------------------------
 // Test routines
@@ -72,11 +73,17 @@ h_cmd_lcd_init_test(uint32_t param)
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
-void show_plasma(int t);
+void show_plasma(int t, int shift);
 
 void main()
 {
 	uint32_t t = 0;
+	int plasma = 0;
+	int poly = 0;
+	int shift =  3;
+	int angle = 0;
+	uint32_t before;
+	uint32_t after;
 
 	/* Init console IO */
 	console_init();
@@ -84,13 +91,34 @@ void main()
 	const uint8_t tx_buf[1] = { 0x35 };
 	spi_xfer(tx_buf, 1, 0, NULL, 0);
 
-	volatile uint32_t *fb32 = (volatile uint32_t *)PSRAM_BASE;
 	puts("MCH2022 iCE40 initialized\n");
 
 	printf("h_cmd_lcd_init_test: %08x\n", h_cmd_lcd_init_test(0));
 	
 	/* Main loop */
 	while (1) {
+		if (plasma) {
+			// 1. Wacht op het begin van de verticale terugslag (V-Sync)
+			wait_vsync();
+
+			// 2. Start de hardware-blitter en wacht tot hij klaar is (~5,5 ms)
+			lcd_blit_from_psram(0);
+
+			// 3. De blitter is nu klaar (blit_active == 0) en de PSRAM is weer vrij.
+			//    Gebruik de overige ~9 tot 11 ms om het volgende frame in PSRAM te tekenen!
+			show_plasma(t++, shift);
+		}
+		if (poly) {
+			// 1. Wacht op het begin van de verticale terugslag (V-Sync)
+			wait_vsync();
+
+			// 2. Start de hardware-blitter en wacht tot hij klaar is (~5,5 ms)
+			lcd_blit_from_psram(0);
+
+			// 3. De blitter is nu klaar (blit_active == 0) en de PSRAM is weer vrij.
+			//    Gebruik de overige ~9 tot 11 ms om het volgende frame in PSRAM te tekenen!
+			draw_polygon(5, 100, angle++, 0xFFFF);
+		}
 		/* Debug interactive console */
 		int cmd = getchar_nowait();
 		switch (cmd) {
@@ -112,8 +140,7 @@ void main()
 			break;
 		case 'w':
 			printf("write psram\n");
-			for (int i = 0; i < 320*240; i++)
-				fb32[i] = 0x00000000;
+			lcd_cls();
 			break;
 		case 'r':
 			printf("read psram: %08x\n", fb32[0]);
@@ -125,33 +152,43 @@ void main()
 			for (int i = 30; i < 200/2; i++)
 				fb32[i + 480] = 0xf800f800;
 			psram_set_pixel(30, 60, 0xFFFF);
+			//plot_line(40, 60, 100, 150);
 			break;
 		case '1':
-			printf("plasma\n");
-/*			
-			while (1) {
-				// 1. Wacht op het begin van de verticale terugslag (V-Sync)
-				wait_vsync();
+			plasma = !plasma;
+			printf("plasma continuous %d\n", plasma);
+			break;
+		case '2':
+			printf("plasma single step\n");
+			wait_vsync();
 
-				// 2. Start de hardware-blitter en wacht tot hij klaar is (~5,5 ms)
-				lcd_blit_from_psram(0);
+			// 2. Start de hardware-blitter en wacht tot hij klaar is (~5,5 ms)
+			lcd_blit_from_psram(0);
 
-				// 3. De blitter is nu klaar (blit_active == 0) en de PSRAM is weer vrij.
-				//    Gebruik de overige ~9 tot 11 ms om het volgende frame in PSRAM te tekenen!
-				show_plasma(t++);
-			}
-*/
-				wait_vsync();
-
-				// 2. Start de hardware-blitter en wacht tot hij klaar is (~5,5 ms)
-				lcd_blit_from_psram(0);
-
-				// 3. De blitter is nu klaar (blit_active == 0) en de PSRAM is weer vrij.
-				//    Gebruik de overige ~9 tot 11 ms om het volgende frame in PSRAM te tekenen!
-				uint32_t before = cycles_now();
-				show_plasma(t++);
-				uint32_t after = cycles_now();
-				printf("cycles elapsed: %d\n", after - before);
+			// 3. De blitter is nu klaar (blit_active == 0) en de PSRAM is weer vrij.
+			//    Gebruik de overige ~9 tot 11 ms om het volgende frame in PSRAM te tekenen!
+			before = cycles_now();
+			show_plasma(t++, shift);
+			after = cycles_now();
+			printf("cycles elapsed: %d\n", after - before);
+			break;
+		case '3':
+			if (++shift > 3)
+				shift = 0;;
+			printf("plasma shift %d\n", shift);
+			break;
+		case '4':
+			printf("poly single step\n");
+			before = cycles_now();
+			draw_polygon(5, 100, angle++, 0xF800);
+			after = cycles_now();
+			printf("cycles elapsed: %d\n", after - before);
+			wait_vsync();
+			lcd_blit_from_psram(0);
+			break;
+		case '5':
+			poly = !poly;
+			printf("poly continuous %d\n", poly);
 			break;
 		}
 	}

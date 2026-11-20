@@ -34,16 +34,18 @@ static inline uint16_t plasma_pixel(int i, int j_term, int t)
     uint16_t b = (uint8_t)(128 + sintab[((color << 1) + t) & 0xFF]) >> 3;
     return (r << 11) | (g << 5) | b;
 }
-void show_plasma(int t)
+
+void show_plasma(int t, int shift)
 {
     volatile uint32_t *fb32 = (volatile uint32_t *)PSRAM_BASE;
     int t_off = 128 + sintab[t & 0xFF];
-
-    for (int j = 0; j < 320 / 8; j++) {
+	int j_max = 320 >> shift;
+	int i_max = 240 >> shift;
+    for (int j = 0; j < j_max; j++) {
         int j_term = 128 + sintab[(j + t_off) & 0xFF];
-        volatile uint32_t *row32 = fb32 + (j * 120); // 320 pixels = 160 woorden per rij
+        volatile uint32_t *row32 = fb32 + (j * 120); // 240 pixels = 120 woorden per rij
 
-        for (int i = 0; i < 240 / 8; i += 2) {
+        for (int i = 0; i < i_max; i += 2) {
             uint32_t p0 = plasma_pixel(i,     j_term, t);
             uint32_t p1 = plasma_pixel(i + 1, j_term, t);
             row32[i >> 1] = (p0 << 16) | p1;

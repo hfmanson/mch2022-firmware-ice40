@@ -204,7 +204,7 @@ void lcd_blit_from_psram(uint32_t psram_word_addr)
 
     // Stel startadres in (0 = begin van PSRAM) en start de blit
     blitter_regs->addr = psram_word_addr;
-    blitter_regs->csr  = 1;
+    blitter_regs->csr  = 1; // Bit 0 = auto-clear naar 0
 
     // Optioneel: wacht tot de blit klaar is
     while (blitter_regs->csr & (1 << 31));
