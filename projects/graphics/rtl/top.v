@@ -310,7 +310,8 @@ module top (
 	// PSRAM wishbone [4]
 	// -------------
 	psram_wb #(
-		.ADDR_WIDTH(16)
+		.ADDR_WIDTH(16),
+		.PORTRAIT(1)
 	) psram_wb_I (
 		.mi_addr  (mt_mi_addr),
 		.mi_len   (mt_mi_len),

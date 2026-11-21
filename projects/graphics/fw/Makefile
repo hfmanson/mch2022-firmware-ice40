@@ -39,6 +39,7 @@ HEADERS_app=\
 SOURCES_app=\
 	mira.c \
 	plasma.c \
+	poly.c \
 	fw_app.c \
 	$(NULL)
 

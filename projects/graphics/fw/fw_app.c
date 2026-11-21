@@ -19,8 +19,9 @@
 #include "misc.h"
 #include "msg.h"
 #include "qpi.h"
-#include "mira.h"
 #include "setpixel.h"
+#include "mira.h"
+#include "poly.h"
 
 // ---------------------------------------------------------------------------
 // Test routines
@@ -80,8 +81,10 @@ void main()
 	uint32_t t = 0;
 	int plasma = 0;
 	int poly = 0;
+	int sides = 3;
 	int shift =  3;
 	int angle = 0;
+	int inc = 1;
 	uint32_t before;
 	uint32_t after;
 
@@ -117,7 +120,7 @@ void main()
 
 			// 3. De blitter is nu klaar (blit_active == 0) en de PSRAM is weer vrij.
 			//    Gebruik de overige ~9 tot 11 ms om het volgende frame in PSRAM te tekenen!
-			draw_polygon(5, 100, angle++, 0xFFFF);
+			draw_polygon(sides, 100, angle += inc, 0xFFFF);
 		}
 		/* Debug interactive console */
 		int cmd = getchar_nowait();
@@ -180,7 +183,7 @@ void main()
 		case '4':
 			printf("poly single step\n");
 			before = cycles_now();
-			draw_polygon(5, 100, angle++, 0xF800);
+			draw_polygon(sides, 100, angle += inc, 0xF800);
 			after = cycles_now();
 			printf("cycles elapsed: %d\n", after - before);
 			wait_vsync();
@@ -188,7 +191,16 @@ void main()
 			break;
 		case '5':
 			poly = !poly;
+			if (!poly) sides = 3;
 			printf("poly continuous %d\n", poly);
+			break;
+		case '6':
+			sides++;
+			printf("poly sides %d\n", sides);
+			break;
+		case '7':
+			if (++inc == 8) inc = 0;
+			printf("speed %d\n", inc);
 			break;
 		}
 	}
